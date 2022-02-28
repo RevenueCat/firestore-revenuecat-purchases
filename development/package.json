@@ -1,0 +1,16 @@
+{
+  "name": "development",
+  "version": "1.0.0",
+  "description": "",
+  "main": "signer-server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.19.2",
+    "express": "^4.17.3",
+    "njwt": "^1.2.0"
+  }
+}
