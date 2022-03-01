@@ -7,7 +7,7 @@ import * as nJwt from "njwt";
 admin.initializeApp();
 // const auth = admin.auth();
 
-const SHARED_SECRET = "carranza"; // TODO make Env variable
+const SHARED_SECRET = process.env.REVENUECAT_SHARED_SECRET as string;
 const ERROR_INVALID_SHARED_SECRET = "Invalid Shared Secret, please check your configuration {docs link}";
 
 

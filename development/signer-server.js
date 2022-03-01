@@ -14,13 +14,11 @@ app.post('/', jsonParser, (req, res) => {
         iss: "https://firebase-extension.revenuecat.com/",
         payload: req.body
     }
-    var key = "carranza"
+    var key = process.env.SHARED_SECRET;
 
 
     const jwt = nJwt.create(claims, key);
     jwt.setExpiration(new Date().getTime() + (60 * 60 * 1000)) // one hour
-
-    console.log(jwt);
 
     res.send(jwt.compact());
 })
