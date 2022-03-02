@@ -5,10 +5,16 @@ import { createJWT } from "../src/__tests__/utils";
 const app = express()
 const port = 8123
 
+const SECRET = "carranza";
+
 var jsonParser = bodyParser.json()
 
 app.post('/', jsonParser, (req, res) => {
-    res.send(createJWT(3600, req.body, "carranza"));
+    console.log(`creating a JWT with body: ${JSON.stringify(req.body)} and secret ${SECRET}`)
+    const jwt = createJWT(3600, req.body, SECRET);
+    console.log("\t", jwt);
+
+    res.send(jwt);
 })
 
 app.listen(port, () => {
