@@ -2,6 +2,12 @@
 
 TODO
 
+## Installing the extension in our test project
+
+```
+firebase ext:install . --project revenuecat-1567550268644
+```
+
 ## Testing
 
 Open one tab and run

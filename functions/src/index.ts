@@ -55,7 +55,7 @@ export const handler = functions.https.onRequest(async (request, response) => {
   try {
     await collection.doc(eventId).set(eventPayload);
   } catch (e) {
-    functions.logger.error(`Error saving to document: ${e}`);
+    logMessage(`Error saving to document: ${e}`, "error");
   }
 
   response.send({});
