@@ -2,7 +2,7 @@ import nJwt, { JSONMap } from "njwt";
 
 // TODO: add docs
 export const EXPECTED_AUTH_ERROR = JSON.stringify({
-    error: "Invalid Shared Secret, please check your configuration {docs link}"
+    error: { code:1 , message: "Incoming RevenueCat webhook could not be authenticated. Please check that the shared secret is set up correctly."}
 });
 
 export const createJWT = (expirationSeconds: number, payload: JSONMap, secretKey: string) => {

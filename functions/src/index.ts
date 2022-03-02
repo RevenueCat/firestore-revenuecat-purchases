@@ -4,12 +4,12 @@ import * as admin from "firebase-admin";
 import equal from "fast-deep-equal";
 
 import * as nJwt from "njwt";
+import { ERROR_INVALID_SHARED_SECRET } from "./errors";
 
 admin.initializeApp();
-// const auth = admin.auth();
 
 const SHARED_SECRET = process.env.REVENUECAT_SHARED_SECRET as string;
-const ERROR_INVALID_SHARED_SECRET = "Invalid Shared Secret, please check your configuration {docs link}";
+const EVENTS_LOCATION = process.env.REVENUECAT_EVENTS_LOCATION as string;
 
 export const checkSignature = (sharedSecret: string) => (request: Request) => {
   const requestToken = request.get("x-revenuecat-token");
@@ -33,18 +33,29 @@ export const checkSignature = (sharedSecret: string) => (request: Request) => {
   return true;
 };
 
-const logMessage = (message: string, level: "info" | "error" ="info") => {
+const logMessage = (message: string | {message: string, code: number}, level: "info" | "error" ="info") => {
     functions.logger[level](message, { structuredData: true });
 }
 
-export const handler = functions.https.onRequest((request, response) => {
-  
+export const handler = functions.https.onRequest(async (request, response) => {
   if (!checkSignature(SHARED_SECRET)(request)) {
     response.status(401).send(JSON.stringify({
         error: ERROR_INVALID_SHARED_SECRET,
     }));
 
-    return;
+    return Promise.resolve();
+  }
+
+  const eventPayload = request.body; // TODO: to not break this for phase 3, let's add this under request.body.event
+  const eventId = eventPayload.id;
+  
+  const firestore = admin.firestore();
+  const collection = firestore.collection(EVENTS_LOCATION);
+  
+  try {
+    await collection.doc(eventId).set(eventPayload);
+  } catch (e) {
+    functions.logger.error(`Error saving to document: ${e}`);
   }
 
   response.send({});

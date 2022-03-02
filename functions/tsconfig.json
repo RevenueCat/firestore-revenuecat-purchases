@@ -3,7 +3,7 @@
     "module": "commonjs",
     "esModuleInterop": true,
     "noImplicitReturns": true,
-    "noUnusedLocals": true,
+    "noUnusedLocals": false,
     "outDir": "lib",
     "sourceMap": true,
     "strict": true,
@@ -12,5 +12,8 @@
   "compileOnSave": true,
   "include": [
     "src"
+  ],
+  "typeRoots": [
+    "src/types/custom.d.ts"
   ]
 }
