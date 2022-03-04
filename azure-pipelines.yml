@@ -12,13 +12,12 @@ stages:
         steps:
           - checkout: self
             persistCredentials: true
-          - script: cd functions/
-          - script: ls
           - task: Cache@2
             inputs:
-              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              key: 'npm | "$(Agent.OS)" | functions/package-lock.json'
               restoreKeys: |
                 npm | "$(Agent.OS)"
               path: $(npm_config_cache)
             displayName: Cache npm
           - script: npm ci
+            workingDirectory: functions/
