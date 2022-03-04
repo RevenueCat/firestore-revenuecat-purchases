@@ -33,11 +33,8 @@ export const getMockedResponse = (expect: any, onSend: (payload: Object) => void
     }
 }
 
-export const getMockedRequest = (getters: any, payload: any) => {
+export const getMockedRequest = (payload: any) => {
     return {
-        get: function (key: string) { 
-            return getters[key];
-        },
         body: payload
     }
 }

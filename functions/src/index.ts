@@ -13,6 +13,7 @@ const EVENTS_LOCATION = process.env.REVENUECAT_EVENTS_LOCATION as string;
 
 export const validateAndGetPayload = (sharedSecret: string) => (request: Request) => {
   try {
+    console.log("FOO", sharedSecret, request.body);
     const verification = nJwt.verify(request.body, sharedSecret) as { body: { payload?: Object } };
     return verification.body.payload;
   } catch(e) { 
@@ -50,5 +51,5 @@ export const handler = functions.https.onRequest(async (request, response) => {
     logMessage(`Error saving to document: ${e}`, "error");
   }
 
-  response.send({ status: "OK" });
+  response.send({});
 });

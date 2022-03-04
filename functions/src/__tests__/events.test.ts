@@ -11,9 +11,7 @@ describe("events", () => {
     it("saves the event in the configured collection", async () => {
         const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(200, {}) as any;
         const payload = { id: "uuid", foo: "bar" };
-        const mockedRequest = getMockedRequest({
-            "x-revenuecat-token": createJWT(60, payload, "test_secret"),
-        }, payload) as any;
+        const mockedRequest = getMockedRequest(createJWT(60, payload, "test_secret")) as any;
 
         api.handler(mockedRequest, mockedResponse);
 
