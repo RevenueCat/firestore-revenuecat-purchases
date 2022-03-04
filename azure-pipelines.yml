@@ -7,13 +7,13 @@ stages:
     jobs:
       - job: RunTest
         displayName: "Run unit tests"
-        workingDirectory: functions/
         pool:
           vmImage: "ubuntu-18.04"
         steps:
           - checkout: self
             persistCredentials: true
             clean: false
+          - script: cd functions/
           - task: Cache@2
             inputs:
               key: 'npm | "$(Agent.OS)" | package-lock.json'
