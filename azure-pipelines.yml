@@ -7,6 +7,7 @@ stages:
     jobs:
       - job: RunTest
         displayName: "Run unit tests"
+        workingDirectory: functions/
         pool:
           vmImage: "ubuntu-18.04"
         steps:
@@ -14,7 +15,6 @@ stages:
             persistCredentials: true
             clean: false
           - task: Cache@2
-            workingDirectory: functions/
             inputs:
               key: 'npm | "$(Agent.OS)" | package-lock.json'
               restoreKeys: |
@@ -22,5 +22,4 @@ stages:
               path: $(npm_config_cache)
             displayName: Cache npm
           - script: npm ci
-            workingDirectory: functions/
 
