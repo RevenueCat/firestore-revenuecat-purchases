@@ -23,3 +23,5 @@ stages:
             displayName: Cache npm
           - script: npm ci
             workingDirectory: functions/
+          - script: yarn test test:emulator
+            workingDirectory: functions/
