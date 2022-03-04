@@ -21,7 +21,9 @@ stages:
                 npm | "$(Agent.OS)"
               path: $(npm_config_cache)
             displayName: Cache npm
-          - script: npm ci
+          - script: |
+              npm ci
+              yarn global add firebase-tools
             workingDirectory: functions/
           - script: yarn test test:emulator
             workingDirectory: functions/
