@@ -22,4 +22,3 @@ stages:
               path: $(npm_config_cache)
             displayName: Cache npm
           - script: npm ci
-
