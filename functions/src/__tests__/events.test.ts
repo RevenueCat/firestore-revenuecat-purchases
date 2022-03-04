@@ -8,7 +8,7 @@ describe("events", () => {
         global.firebaseTest.cleanup();
     });
 
-    it("saves the event in the configured collection", async () => {
+    it("saves the event in the configured collection", (done) => {
         const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(200, {}) as any;
         const payload = { id: "uuid", foo: "bar" };
         const mockedRequest = getMockedRequest(createJWT(60, payload, "test_secret")) as any;
@@ -18,6 +18,7 @@ describe("events", () => {
         setTimeout(async () => {
             const doc = await admin.firestore().collection("revenuecat_events").doc("uuid").get();
             expect(doc.data()).toEqual(payload);
+            done();
         }, 500);
     });
 });
