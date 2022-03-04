@@ -1,0 +1,26 @@
+trigger:
+  - main
+
+stages:
+  - stage: RunTest
+    displayName: "Run Tests"
+    jobs:
+      - job: RunTest
+        displayName: "Run unit tests"
+        pool:
+          vmImage: "ubuntu-18.04"
+        steps:
+          - checkout: self
+            persistCredentials: true
+            clean: false
+          - task: Cache@2
+            workingDirectory: functions/
+            inputs:
+              key: 'npm | "$(Agent.OS)" | package-lock.json'
+              restoreKeys: |
+                npm | "$(Agent.OS)"
+              path: $(npm_config_cache)
+            displayName: Cache npm
+          - script: npm ci
+            workingDirectory: functions/
+
