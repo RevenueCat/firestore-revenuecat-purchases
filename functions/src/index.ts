@@ -50,5 +50,5 @@ export const handler = functions.https.onRequest(async (request, response) => {
     logMessage(`Error saving to document: ${e}`, "error");
   }
 
-  response.send({ status: "OK" });
+  response.send({});
 });
