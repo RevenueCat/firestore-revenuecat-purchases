@@ -25,5 +25,6 @@ stages:
               npm ci
               yarn global add firebase-tools
             workingDirectory: functions/
-          - script: yarn test test:emulator
-            workingDirectory: functions/
+          - script: |
+            cd functions/;
+            yarn test test:emulator
