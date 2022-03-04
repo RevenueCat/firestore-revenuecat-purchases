@@ -24,7 +24,7 @@ stages:
           - script: |
               cd functions;
               npm ci
-              yarn global add firebase-tools
+              npm install -g firebase-tools
           - script: |
               cd functions/;
-              yarn test test:emulator
+              firebase emulators:exec --project=sample 'npm run test'
