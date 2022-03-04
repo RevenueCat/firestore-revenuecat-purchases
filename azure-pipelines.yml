@@ -6,6 +6,8 @@ stages:
     displayName: "Run Tests"
     jobs:
       - job: RunTest
+        variables:
+          npm_config_cache: $(Pipeline.Workspace)/.npm
         displayName: "Run unit tests"
         pool:
           vmImage: "ubuntu-18.04"
