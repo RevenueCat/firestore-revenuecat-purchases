@@ -18,8 +18,6 @@ export class InvalidApiVersionError extends ExtensionError {
 
         const message = `The version of this extension is not the same. Extension version ${extensionVersion}, Api version: ${apiVersionDisplay}. Please retry the request with the correct version`
         super(message);
-
-        Object.setPrototypeOf(this, InvalidApiVersionError.prototype);
     }
 
     code() {
@@ -31,8 +29,6 @@ export class UnknownError extends ExtensionError {
     constructor() {
         const message = `Unknown error, please contact us a https://support.revenuecat.com/`
         super(message);
-
-        Object.setPrototypeOf(this, InvalidApiVersionError.prototype);
     }
 
     code() {
