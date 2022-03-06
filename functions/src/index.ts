@@ -6,7 +6,7 @@ import { validateApiVersion } from "./validate-api-version";
 import { requestErrorHandler } from "./error-handler";
 import path from "path";
 
-const ENV_FILES_PATH = "../";
+const ENV_FILES_PATH = "./";
 const ENV_FILE = path.join(ENV_FILES_PATH, process.env.NODE_ENV === "test" ? ".env.test" : ".env");
 
 dotenv.config({
