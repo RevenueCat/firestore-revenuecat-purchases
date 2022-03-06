@@ -1,54 +1,36 @@
 import * as functions from "firebase-functions";
-import { Request } from "firebase-functions/v1/https";
 import * as admin from "firebase-admin";
-import equal from "fast-deep-equal";
-
-import * as nJwt from "njwt";
-import { ERROR_INVALID_SHARED_SECRET } from "./errors";
-
+import { validateAndGetPayload } from "./validate-and-get-payload";
+import { validateApiVersion } from "./validate-api-version";
+import { requestErrorHandler } from "./error-handler";
 admin.initializeApp();
 
 const SHARED_SECRET = process.env.REVENUECAT_SHARED_SECRET as string;
 const EVENTS_LOCATION = process.env.REVENUECAT_EVENTS_LOCATION as string;
+const EXTENSION_VERSION = process.env.EXTENSION_VERSION || "1.0.0";
 
-export const validateAndGetPayload = (sharedSecret: string) => (request: Request) => {
-  try {
-    const verification = nJwt.verify(request.body, sharedSecret) as { body: { payload?: Object } };
-    return verification.body.payload;
-  } catch(e) { 
-      logMessage(ERROR_INVALID_SHARED_SECRET, "error");
-      logMessage(e as string);
-
-      return false;
+interface BodyPayload {
+  api_version: string;
+  event: {
+    id: string;
+    subscriber_info: {}
   }
-};
-
-const logMessage = (message: string | {message: string, code: number}, level: "info" | "error" ="info") => {
-    functions.logger[level](message, { structuredData: true });
 }
 
 export const handler = functions.https.onRequest(async (request, response) => {
-  // TODO: validate DTO
-  const eventPayload = validateAndGetPayload(SHARED_SECRET)(request) as { id: string };
-
-  if (!eventPayload) {
-    response.status(401).send(JSON.stringify({
-        error: ERROR_INVALID_SHARED_SECRET,
-    }));
-
-    return Promise.resolve();
-  }
-
-  const eventId = eventPayload.id;
-  
-  const firestore = admin.firestore();
-  const collection = firestore.collection(EVENTS_LOCATION);
-  
   try {
-    await collection.doc(eventId).set(eventPayload);
-  } catch (e) {
-    logMessage(`Error saving to document: ${e}`, "error");
-  }
+    const bodyPayload = validateAndGetPayload(SHARED_SECRET)(request) as BodyPayload;
+    validateApiVersion(bodyPayload, EXTENSION_VERSION);
 
-  response.send({});
+    const eventPayload = bodyPayload.event;
+
+    const eventId = eventPayload.id;
+    const firestore = admin.firestore();
+    const collection = firestore.collection(EVENTS_LOCATION);
+
+    await collection.doc(eventId).set(eventPayload);
+    response.send({});
+  } catch (err) {
+    requestErrorHandler(err as Error, response);
+  }
 });

@@ -1,9 +1,8 @@
 import dotenv from "dotenv";
 import functions from "firebase-functions-test";
-import { FeaturesList } from "firebase-functions-test/lib/features";
 
 // Setting up ENV variables
-dotenv.config({ path: '../test-params.env' });
+dotenv.config({ path: './.env.test' });
 
 // @ts-ignore
 global.firebaseTest = functions({

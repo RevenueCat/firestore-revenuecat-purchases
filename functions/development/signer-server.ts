@@ -5,7 +5,7 @@ import { createJWT } from "../src/__tests__/utils";
 const app = express()
 const port = 8123
 
-const SECRET = "carranza";
+const SECRET = process.argv[2] ?? "test_secret";
 
 var jsonParser = bodyParser.json()
 
@@ -18,5 +18,5 @@ app.post('/', jsonParser, (req, res) => {
 })
 
 app.listen(port, () => {
-    console.log(`Debugging signer server listening on port ${port}`)
+    console.log(`Debugging signer server listening on port ${port} and secret ${SECRET}`)
 })
