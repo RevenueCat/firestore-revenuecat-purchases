@@ -5,7 +5,7 @@ import { createJWT } from "../src/__tests__/utils";
 const app = express()
 const port = 8123
 
-const SECRET = process.argv[2] ?? "carranza";
+const SECRET = process.argv[2] ?? "test_secret";
 
 var jsonParser = bodyParser.json()
 

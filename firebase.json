@@ -6,7 +6,7 @@
   "emulators": {
     "firestore": {
       "host": "localhost",
-      "port": "4000"
+      "port": 4000
     }
   },
   "functions": {
