@@ -1,4 +1,4 @@
-import { createJWT, EXPECTED_AUTH_ERROR, getMockedRequest, getMockedResponse } from "./utils";
+import { createJWT, getMockedRequest, getMockedResponse } from "./utils";
 import * as api from "../index";
 import * as admin from "firebase-admin";
 

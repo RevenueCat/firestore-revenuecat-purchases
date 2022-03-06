@@ -1,7 +1,6 @@
 import { createJWT, EXPECTED_AUTH_ERROR, getMockedRequest, getMockedResponse } from "./utils";
 import * as api from "../index";
 
-
 describe("authentication", () => {
     afterEach(() => {
         // @ts-ignore
