@@ -19,6 +19,8 @@ interface BodyPayload {
 
 export const handler = functions.https.onRequest(async (request, response) => {
   try {
+    response.header("X-EXTENSION-VERSION", EXTENSION_VERSION);
+
     const bodyPayload = validateAndGetPayload(SHARED_SECRET)(request) as BodyPayload;
     validateApiVersion(bodyPayload, EXTENSION_VERSION);
 
@@ -29,6 +31,8 @@ export const handler = functions.https.onRequest(async (request, response) => {
     const collection = firestore.collection(EVENTS_LOCATION);
 
     await collection.doc(eventId).set(eventPayload);
+
+
     response.send({});
   } catch (err) {
     requestErrorHandler(err as Error, response);

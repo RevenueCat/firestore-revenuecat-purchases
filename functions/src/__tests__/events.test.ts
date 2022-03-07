@@ -11,9 +11,19 @@ describe("events", () => {
         global.firebaseTest.cleanup();
     });
 
+    it("API returns extension version in headers", async () => {
+        const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(200, {}) as any;
+        const payload = { api_version: "1.0.0", event: { id: "uuid", bar: "baz" } };
+        const mockedRequest = getMockedRequest(createJWT(60, payload, "test_secret")) as any;
+
+        await api.handler(mockedRequest, mockedResponse);
+
+        expect(mockedResponse.getHeaders()).toEqual({ 'X-EXTENSION-VERSION': '1.0.0' });
+    });
+
     it("saves the event in the configured collection", (done) => {
         const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(200, {}) as any;
-        const payload = { api_version: "1.0.0", event: { id: "uuid", bar: "baz" }};
+        const payload = { api_version: "1.0.0", event: { id: "uuid", bar: "baz" } };
         const mockedRequest = getMockedRequest(createJWT(60, payload, "test_secret")) as any;
 
         api.handler(mockedRequest, mockedResponse);

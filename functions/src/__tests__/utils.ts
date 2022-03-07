@@ -17,20 +17,33 @@ export const createJWT = (expirationSeconds: number, payload: JSONMap, secretKey
     return jwt.compact();
 }
 
-export const getMockedResponse = (expect: any, onSend: (payload: Object) => void) => (expectedStatusCode: number, expectedResponse: Object) => {
-    return {
+type OnSend = (payload: Object) => void;
+type MockedResponseCallable = (expectedStatusCode: number, expectedResponse: Object) => any;
+
+export function getMockedResponse(expect: any, onSend: OnSend): MockedResponseCallable { 
+    return (expectedStatusCode, expectedResponse) => ({
+        header: function(headerKey: string, headerValue: string) {
+            if (!this.headers) {
+                this.headers = {};
+            }
+
+            this.headers[headerKey] = headerValue;
+        },
+        getHeaders: function() {
+            return this.headers;
+        },
         status: function (code: number) { 
             expect(code).toBe(expectedStatusCode);
             // @ts-ignore
             this.statusCode = code;
             return this;
         },
-        send: function(payload: Object) {
+        send: function (payload: Object) {
             expect(payload).toEqual(expectedResponse);
             onSend(payload);
             return this;
         }
-    }
+    });
 }
 
 export const getMockedRequest = (payload: any) => {
