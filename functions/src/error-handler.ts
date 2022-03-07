@@ -1,5 +1,5 @@
 import { ExtensionError, InvalidApiVersionError, InvalidTokenError, UnknownError } from "./exceptions";
-import { Response }from "firebase-functions";
+import { logger, Response } from "firebase-functions";
 
 interface ErrorPayload {
     error: {
@@ -34,13 +34,7 @@ export const requestErrorHandler = (exception: Error, response: Response) => {
     }
 
     responsePayload = constructResponsePayload(extensionException)
+    logger.error(responsePayload.error.message);
 
-    switch (true) {
-        case exception instanceof InvalidApiVersionError:
-            return sendErrorResponse(400, response, responsePayload);
-        case exception instanceof InvalidTokenError:
-            return sendErrorResponse(401, response, responsePayload);        
-        default:
-            return sendErrorResponse(500, response, responsePayload);
-    }
-  };
+    return sendErrorResponse(extensionException.httpStatusCode(), response, responsePayload);
+};

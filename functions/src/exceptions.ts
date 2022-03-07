@@ -1,5 +1,6 @@
 export abstract class ExtensionError extends Error {
     abstract code(): number;
+    abstract httpStatusCode(): number;
 }
 
 export class InvalidTokenError extends ExtensionError {
@@ -9,6 +10,10 @@ export class InvalidTokenError extends ExtensionError {
 
     code() {
         return 1;
+    }
+
+    httpStatusCode() {
+        return 401;
     }
 }
 
@@ -23,6 +28,10 @@ export class InvalidApiVersionError extends ExtensionError {
     code() {
         return 2;
     }
+
+    httpStatusCode() {
+        return 400;
+    }
 }
 
 export class UnknownError extends ExtensionError {
@@ -33,5 +42,9 @@ export class UnknownError extends ExtensionError {
 
     code() {
         return 3;
+    }
+
+    httpStatusCode() {
+        return 500;
     }
 }
