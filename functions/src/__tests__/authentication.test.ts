@@ -7,7 +7,7 @@ describe("authentication", () => {
         global.firebaseTest.cleanup();
     });
 
-    const validPayload = { api_version: "1.0.0", event: { id: "uuid" } };
+    const validPayload = { api_version: "1.0.0", event: { id: "uuid" }, customer_info: { original_app_user_id: "tonidelevate" } };
 
     it("should authenticate with a valid JWT", (done) => {
         const mockedResponse = getMockedResponse(expect, () => done())(200, {}) as any;
