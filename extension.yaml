@@ -80,8 +80,8 @@ params:
     default: us-east1
     required: true
     immutable: true
-  - param: REVENUECAT_EVENTS_LOCATION
-    label: Purchasely Webhook Raw Events Firestore collection (current events format)
+  - param: REVENUECAT_EVENTS_COLLECTION
+    label: RevenueCat Webhook Events Firestore collection
     description: >-
       What is the path to the Cloud Firestore collection where the extension should store RevenueCat events?
       Leave empty if you do not want the extension to store RevenueCat events.
@@ -89,6 +89,16 @@ params:
     validationRegex: "^[^/]+(/[^/]+/[^/]+)*$"
     validationErrorMessage: Firestore collection paths must be an odd number of segments separated by slashes, e.g. "path/to/collection".
     required: false
+  - param: REVENUECAT_CUSTOMERS_COLLECTION
+    label: Location of the customers collection
+    description: >-
+      What is the path to the Cloud Firestore collection where the extension should store RevenueCat customer details?
+      This can be the location of an existing user collection, the extension will not overwrite your existing data but rather merge the RevenueCat data into your existing `uid` docs.
+      Leave empty if you do not want the extension to store RevenueCat customer details.
+    default: RevenueCat_Customers
+    validationRegex: "^[^/]+(/[^/]+/[^/]+)*$"
+    validationErrorMessage: Firestore collection paths must be an odd number of segments separated by slashes, e.g. "path/to/collection".
+    required: false    
   - param: REVENUECAT_SHARED_SECRET
     label: RevenueCat Firebase Integration Shared Secret
     description: >-

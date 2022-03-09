@@ -11,26 +11,40 @@ describe("events", () => {
         global.firebaseTest.cleanup();
     });
 
+    const validPayload = { api_version: "1.0.0", event: { id: "uuid", bar: "baz" }, customer_info: { original_app_user_id: "miguelcarranza", first_seen: "2022-01-01 15:03" } };
+
     it("API returns extension version in headers", async () => {
         const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(200, {}) as any;
-        const payload = { api_version: "1.0.0", event: { id: "uuid", bar: "baz" } };
-        const mockedRequest = getMockedRequest(createJWT(60, payload, "test_secret")) as any;
-
+        const mockedRequest = getMockedRequest(createJWT(60, validPayload, "test_secret")) as any;
         await api.handler(mockedRequest, mockedResponse);
 
-        expect(mockedResponse.getHeaders()).toEqual({ 'X-EXTENSION-VERSION': '1.0.0' });
+        expect(mockedResponse.getHeaders()).toEqual({ 'X-EXTENSION-VERSION': validPayload.api_version });
     });
 
-    it("saves the event in the configured collection", (done) => {
+    it("saves the event in the configured events collection", (done) => {
         const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(200, {}) as any;
-        const payload = { api_version: "1.0.0", event: { id: "uuid", bar: "baz" } };
-        const mockedRequest = getMockedRequest(createJWT(60, payload, "test_secret")) as any;
+        
+        const mockedRequest = getMockedRequest(createJWT(60, validPayload, "test_secret")) as any;
 
         api.handler(mockedRequest, mockedResponse);
 
         setTimeout(async () => {
             const doc = await admin.firestore().collection("revenuecat_events").doc("uuid").get();
-            expect(doc.data()).toEqual(payload.event);
+            expect(doc.data()).toEqual(validPayload.event);
+            done();
+        }, 500);
+    });
+
+    it("saves the customer_info in the customer collection", (done) => {
+        const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(200, {}) as any;
+
+        const mockedRequest = getMockedRequest(createJWT(60, validPayload, "test_secret")) as any;
+
+        api.handler(mockedRequest, mockedResponse);
+
+        setTimeout(async () => {
+            const doc = await admin.firestore().collection("revenuecat_customers").doc("miguelcarranza").get();
+            expect(doc.data()).toEqual(validPayload.customer_info);
             done();
         }, 500);
     });
