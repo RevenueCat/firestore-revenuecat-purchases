@@ -85,6 +85,8 @@ params:
     description: >-
       What is the path to the Cloud Firestore collection where the extension should store RevenueCat events?
       Leave empty if you do not want the extension to store RevenueCat events.
+
+      (You can later modify this value in Google Firestore > Extensions > Extension Configuration > Reconfigure extension)
     validationRegex: "^[^/]+(/[^/]+/[^/]+)*$"
     validationErrorMessage: Firestore collection paths must be an odd number of segments separated by slashes, e.g. "path/to/collection".
     required: false
@@ -92,8 +94,10 @@ params:
     label: Location of the customers collection
     description: >-
       What is the path to the Cloud Firestore collection where the extension should store RevenueCat customer details?
-      This can be the location of an existing user collection, the extension will not overwrite your existing data but rather merge the RevenueCat data into your existing `uid` docs.
+      This can be the location of an existing user collection, the extension will not overwrite your existing data but rather merge the RevenueCat data into your existing firestore documents.
       Leave empty if you do not want the extension to store RevenueCat customer details.
+      
+      (You can later modify this value in Google Firestore > Extensions > Extension Configuration > Reconfigure extension)
     validationRegex: "^[^/]+(/[^/]+/[^/]+)*$"
     validationErrorMessage: Firestore collection paths must be an odd number of segments separated by slashes, e.g. "path/to/collection".
     required: false    
