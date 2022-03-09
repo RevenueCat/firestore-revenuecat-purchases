@@ -27,6 +27,8 @@ export const requestErrorHandler = (exception: Error, response: Response) => {
     let responsePayload;
     let extensionException: ExtensionError;
 
+    logger.error(exception, { structuredData: true} );
+
     if (exception instanceof ExtensionError) {
         extensionException = exception;
     } else {
@@ -34,7 +36,6 @@ export const requestErrorHandler = (exception: Error, response: Response) => {
     }
 
     responsePayload = constructResponsePayload(extensionException)
-    logger.error(responsePayload.error.message);
 
     return sendErrorResponse(extensionException.httpStatusCode(), response, responsePayload);
 };

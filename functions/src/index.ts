@@ -6,8 +6,8 @@ import { requestErrorHandler } from "./error-handler";
 admin.initializeApp();
 
 const SHARED_SECRET = process.env.REVENUECAT_SHARED_SECRET as string;
-const EVENTS_COLLECTION = process.env.REVENUECAT_EVENTS_COLLECTION as string;
-const CUSTOMERS_COLLECTION = process.env.REVENUECAT_CUSTOMERS_COLLECTION as string;
+const EVENTS_COLLECTION = process.env.REVENUECAT_EVENTS_COLLECTION as string | undefined;
+const CUSTOMERS_COLLECTION = process.env.REVENUECAT_CUSTOMERS_COLLECTION as string | undefined;
 const EXTENSION_VERSION = process.env.EXTENSION_VERSION || "1.0.0";
 
 interface BodyPayload {
