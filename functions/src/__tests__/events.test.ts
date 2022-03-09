@@ -2,6 +2,10 @@ import { createJWT, getMockedRequest, getMockedResponse } from "./utils";
 import * as api from "../index";
 import * as admin from "firebase-admin";
 
+function timeout(ms: number) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 describe("events", () => {
     // @ts-ignore
     beforeAll(() => global.firebaseTest.cleanup());
@@ -35,17 +39,27 @@ describe("events", () => {
         }, 500);
     });
 
-    it("saves the customer_info in the customer collection", (done) => {
+    it("saves the customer_info in the customer collection", async () => {
         const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(200, {}) as any;
 
         const mockedRequest = getMockedRequest(createJWT(60, validPayload, "test_secret")) as any;
 
         api.handler(mockedRequest, mockedResponse);
 
-        setTimeout(async () => {
-            const doc = await admin.firestore().collection("revenuecat_customers").doc("miguelcarranza").get();
-            expect(doc.data()).toEqual(validPayload.customer_info);
-            done();
-        }, 500);
+        await timeout(300);
+
+        const doc = await admin.firestore().collection("revenuecat_customers").doc("miguelcarranza").get();
+        expect(doc.data()).toEqual(validPayload.customer_info);
+
+        const additionalCustomerInfo = { original_app_user_id: "miguelcarranza", another_field: "baz" };
+
+        const otherMockedRequest = getMockedRequest(createJWT(60, {...validPayload, customer_info: additionalCustomerInfo }, "test_secret")) as any;
+
+        api.handler(otherMockedRequest, mockedResponse);
+
+        await timeout(300);
+
+        const updatedDoc = await admin.firestore().collection("revenuecat_customers").doc("miguelcarranza").get();
+        expect(updatedDoc.data()).toEqual({...validPayload.customer_info, ...additionalCustomerInfo });
     });
 });
