@@ -17,6 +17,9 @@ roles:
   - role: datastore.user
     reason: >-
       Allows RevenueCat to store Purchases information in Cloud Firestore.
+  - role: firebaseauth.admin
+    reason: >-
+      Allows the extension to store entitlement information in user custom claims.
 
 resources:
   - name: handler
@@ -99,6 +102,22 @@ params:
     validationRegex: "^[^/]+(/[^/]+/[^/]+)*$"
     validationErrorMessage: Firestore collection paths must be an odd number of segments separated by slashes, e.g. "path/to/collection".
     required: false    
+  - param: SET_CUSTOM_CLAIMS
+    label: Should custom claims be set in Firebase Auth with the user's active entitlements?
+    description: >-
+      Do you want to automatically update your Firebase Authentication User's custom claims with their current entitlements?
+      (More information: https://firebase.google.com/docs/auth/admin/custom-claims)
+      
+      If set to "ENABLED", the extension will consider the app_user_id of the user to match the user's Firebase Authentication UID
+      and set a "Custom Claim" with their current active entitlements.
+    type: select
+    options:
+      - label: "ENABLED"
+        value: "ENABLED"
+      - label: "DISABLED"
+        value: "DISABLED"
+    default: "DISABLED"
+    required: true    
   - param: REVENUECAT_SHARED_SECRET
     label: RevenueCat Firebase Integration Shared Secret
     description: >-
