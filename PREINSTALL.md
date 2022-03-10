@@ -1,14 +1,22 @@
-This extension keep track of your mobile apps' users' In-App Purchases & Subscriptions with [RevenueCat](https://www.revenuecat.com) via Firebase Authentication & Firebase Firestore.
-This extension requires you to separately setup (or have already setup) your RevenueCat project.
+This extension facilitates in-app purchases and subscriptions, controls access to premium content, and syncs purchase information to Firestore, using [RevenueCat](https://www.revenuecat.com) via Firebase Authentication & Firebase Firestore.
 
-This extension stores your subscriber events using Cloud Firestore and adds Custom Claims for your users' subscriptions using Firebase Authentication for convenient access control in your application.
+This extension requires you to separately set up (or have already set up) your RevenueCat project.
+
+Using RevenueCat and this extension, you can...
+
+- Use RevenueCat and Firebase as your backend for mobile in-app purchases and subscriptions
+- Store purchase lifecycle events (e.g., purchases, subscription renewals, billing issues) in Firestore and react to them
+- Store and update information about customers and their purchases in Firestore
+- Update information about customers' entitlements as Firebase Authentication [Custom Claims](https://firebase.google.com/docs/auth/admin/custom-claims).
 
 #### Recommended usage
 
 This extension is meant for both native & hybrid mobile applications In-App Purchases & Subscriptions using the app stores' In-App Purchases APIs.
-Currently supported app stores are the Apple App Store, Googe Play Store, Huawei App Gallery & Amazon App Store.
+Currently supported app stores are the Apple App Store, Googe Play Store, and Amazon App Store.
 
 #### Additional setup
+
+##### Firebase
 
 Before installing this extension, set up the following Firebase services in your Firebase project:
 
@@ -17,10 +25,17 @@ Before installing this extension, set up the following Firebase services in your
 - (optional) [Firebase Authentication](https://firebase.google.com/docs/auth) to enable different sign-up options for your users to enable the Custom Claims management.
 - Enable the sign-in methods in the [Firebase console](https://console.firebase.google.com/project/_/authentication/providers) that you want to offer your users.
 
-- Set up a Firebase integration in [RevenueCat](https://app.revenuecat.com/):
+##### RevenueCat
 
-- Get your [shared secret]
-Revenuecat > [YOUR PROJECT] > Integrations > Firebase > Get Shared Secret
+- Set up a Firebase integration in [RevenueCat](https://app.revenuecat.com/): Go to your project settings, and under "Integrations", click "Add", then "Firebase".
+- From the newly created integration, copy your *shared secret*, you will need this to set up the extension.
+
+##### Mobile App
+
+Follow the steps in the [RevenueCat documentation](https://docs.revenuecat.com/docs/getting-started) to add the RevenueCat SDK to your mobile app. In addition, follow the instructions to set up the Firebase Integration inside the app by:
+
+- Listening to Firebase Authentication events and setting the RevenueCat user ID to the Firebase UID
+- Setting the reserved RevenueCat subscriber attribute for the Firebase App Instance ID, if you want to send events to Google Analytics for Firebase.
 
 #### Billing
 
@@ -39,4 +54,4 @@ You are responsible for any costs associated with your use of these services.
 
 To install this extension, your Firebase project must be on the Blaze (pay-as-you-go) plan. You will only be charged for the resources you use. Most Firebase services offer a free tier for low-volume use. [Learn more about Firebase billing.](https://firebase.google.com/pricing)
 
-Starting August 17 2020, you will be billed a small amount (typically less than $0.10) when you install or reconfigure this extension. See the [Cloud Functions for Firebase billing FAQ](https://firebase.google.com/support/faq#expandable-15) for a detailed explanation.
+You will be billed a small amount (typically less than $0.10) when you install or reconfigure this extension. See the [Cloud Functions for Firebase billing FAQ](https://firebase.google.com/support/faq#expandable-15) for a detailed explanation.
