@@ -39,19 +39,11 @@ Follow the steps in the [RevenueCat documentation](https://docs.revenuecat.com/d
 
 #### Billing
 
-This extension uses the following Firebase services which may have associated charges:
+To install an extension, your Firebase project must be on the Blaze (pay-as-you-go) plan. 
+
+You will be charged a small amount (typically around $0.01/month) for the Firebase resources required by this extension (even if it is not used). In addition, this extension uses the following Firebase services which may have associated charges if you exceed the service's free tier for low-volume use ([Learn more about Firebase billing](https://firebase.google.com/pricing)):
 
 - Cloud Firestore
 - Cloud Functions
 
-This extension also uses the following third-party services:
-
-- RevenueCat ([pricing information](https://www.revenuecat.com/pricing))
-
-You are responsible for any costs associated with your use of these services.
-
-#### Note from Firebase
-
-To install this extension, your Firebase project must be on the Blaze (pay-as-you-go) plan. You will only be charged for the resources you use. Most Firebase services offer a free tier for low-volume use. [Learn more about Firebase billing.](https://firebase.google.com/pricing)
-
-You will be billed a small amount (typically less than $0.10) when you install or reconfigure this extension. See the [Cloud Functions for Firebase billing FAQ](https://firebase.google.com/support/faq#expandable-15) for a detailed explanation.
+Usage of this extension also requires you have a RevenueCat account. You are responsible for any costs associated with your RevenueCat usage ([RevenueCat pricing information](https://www.revenuecat.com/pricing)).
