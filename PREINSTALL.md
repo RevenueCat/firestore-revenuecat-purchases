@@ -1,8 +1,8 @@
 This extension facilitates in-app purchases and subscriptions, controls access to premium content, and syncs purchase information to Firestore, using [RevenueCat](https://www.revenuecat.com).
 
-Using RevenueCat and this extension, you can...
+Using this extension, you can use Firebase as your backend for mobile in-app purchases and subscriptions on Apple App Store, Google Play Store, and Amazon Appstore, powered by RevenueCat's in-app purchase infrastructure.
 
-- Use RevenueCat and Firebase as your backend for mobile in-app purchases and subscriptions on Apple App Store, Google Play Store, and Amazon Appstore
+Using RevenueCat and this integration allows you to:
 - Store purchase lifecycle events (e.g., purchases, subscription renewals, billing issues) in Firestore and react to them
 - Store and update information about customers and their purchases in Firestore
 - Update information about customers' entitlements as Firebase Authentication [Custom Claims](https://firebase.google.com/docs/auth/admin/custom-claims).
