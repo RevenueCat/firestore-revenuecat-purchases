@@ -4,6 +4,7 @@ import { validateAndGetPayload } from "./validate-and-get-payload";
 import { validateApiVersion } from "./validate-api-version";
 import { requestErrorHandler } from "./error-handler";
 import moment from "moment";
+import { logMessage } from "./log-message";
 
 admin.initializeApp();
 
@@ -40,22 +41,19 @@ export const handler = functions.https.onRequest(async (request, response) => {
     validateApiVersion(bodyPayload, EXTENSION_VERSION);
 
     const firestore = admin.firestore();
-
-    let eventsSet = null;
-    let customersSet = null;
-    let customClaimsSet = null;
+    const auth = admin.auth();
 
     const eventPayload = bodyPayload.event;
     const customerPayload = bodyPayload.customer_info;
 
     if (EVENTS_COLLECTION) {
       const eventsCollection = firestore.collection(EVENTS_COLLECTION);
-      eventsSet = eventsCollection.doc(eventPayload.id).set(eventPayload);
+      await eventsCollection.doc(eventPayload.id).set(eventPayload);
     }
 
     if (CUSTOMERS_COLLECTION) {
       const customersCollection = firestore.collection(CUSTOMERS_COLLECTION);
-      customersSet = customersCollection.doc(customerPayload.original_app_user_id).set(customerPayload, { merge: true});
+      await customersCollection.doc(customerPayload.original_app_user_id).set(customerPayload, { merge: true});
     }
 
     if (SET_CUSTOM_CLAIMS === "ENABLED") {
@@ -65,20 +63,16 @@ export const handler = functions.https.onRequest(async (request, response) => {
           return expiresDate === null || moment.utc(expiresDate) >= moment.utc()
         });
 
-      const userId = customerPayload.original_app_user_id;
-      const { customClaims } = await admin.auth().getUser(userId);
+        const userId = customerPayload.original_app_user_id;
 
-      // TODO: Return exception in the case that the user doesn't exist.
-      // Question: Would we still want to write events and customer Info?
-      // Question 2: User ID? Should this be like the Attribute Instance ID??
-      customClaimsSet = admin.auth().setCustomUserClaims(userId, { ...(customClaims ? customClaims : {}), revenueCatEntitlements: activeEntitlements });
+      try {
+        const { customClaims } = await auth.getUser(userId);
+        await admin.auth().setCustomUserClaims(userId, { ...(customClaims ? customClaims : {}), revenueCatEntitlements: activeEntitlements });  
+      } catch (userError) { 
+        logMessage(`Error saving user: ${userError}`, "error");
+      }
     }
 
-    await Promise.all([
-      ...eventsSet ? [eventsSet] : [],
-      ...customersSet ? [customersSet] : [],
-      ...customClaimsSet ? [customClaimsSet] : [] 
-    ]);
 
     response.send({});
   } catch (err) {
