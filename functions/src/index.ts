@@ -73,7 +73,6 @@ export const handler = functions.https.onRequest(async (request, response) => {
       }
     }
 
-
     response.send({});
   } catch (err) {
     requestErrorHandler(err as Error, response);
