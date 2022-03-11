@@ -2,27 +2,27 @@ name: revenuecat-firebase-extension
 version: 0.0.1
 specVersion: v1beta  # Firebase Extensions specification version (do not edit)
 
-displayName: RevenueCat Firebase Integration
-description: RevenueCat is a scalable backend for in-app subscriptions and purchases.
+displayName: Add In-App Purchases with RevenueCat
+description: Facilitates in-app purchases and subscriptions, controls access to premium content, and syncs purchase information to Firestore.
 
 license: apache-2.0
 
 author:
   authorName: RevenueCat
-  url: https://github.com/revenuecat
+  url: https://github.com/RevenueCat/revenuecat-firebase-extension
 
 billingRequired: true
 
 roles:
   - role: datastore.user
     reason: >-
-      Allows RevenueCat to store Purchases information in Cloud Firestore.
+      Allows RevenueCat to store customer and event information in Cloud Firestore.
 
 resources:
   - name: handler
     type: firebaseextensions.v1beta.function
     description: >-
-      Listens for RevenueCat server webhook requests, and store purchases information and events in Cloud Firestore.
+      Listens for RevenueCat server webhook requests, and store customer information and events in Cloud Firestore.
     properties:
       location: ${LOCATION}
       runtime: nodejs14
