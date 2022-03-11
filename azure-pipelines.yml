@@ -30,5 +30,9 @@ stages:
               npm run build
               cd ..
           - script: |
+              cd functions;
+              npm run lint
+              cd ..
+          - script: |
               cd functions/;
               firebase emulators:exec --project=sample 'npm run test'
