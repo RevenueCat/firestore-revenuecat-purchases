@@ -34,7 +34,7 @@ Before installing this extension, set up the following Firebase services in your
 
 Follow the steps in the [RevenueCat documentation](https://docs.revenuecat.com/docs/getting-started) to add the RevenueCat SDK to your mobile app. In addition, follow the instructions to set up the Firebase Integration inside the app by:
 
-- Listening to Firebase Authentication events and setting the RevenueCat user ID to the Firebase UID.
+- Listening to Firebase Authentication events and [setting the RevenueCat user ID to the Firebase UID](https://docs.revenuecat.com/docs/firebase#keeping-user-ids-in-sync).
 - Setting the reserved RevenueCat subscriber attribute for the Firebase App Instance ID if you want to send events to Google Analytics for Firebase.
 
 #### Billing
