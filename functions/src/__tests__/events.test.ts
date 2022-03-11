@@ -16,7 +16,7 @@ describe("events", () => {
         global.firebaseTest.cleanup();
     });
 
-    const validPayload = { api_version: "1.0.0", event: { id: "uuid", bar: "baz" }, customer_info: { original_app_user_id: "miguelcarranza", first_seen: "2022-01-01 15:03", entitlements: {
+    const validPayload = { api_version: "1.0.0", event: { id: "uuid", app_user_id: "chairman_carranza", bar: "baz", aliases: ["miguelcarranza", "chairman_carranza"] }, customer_info: { original_app_user_id: "miguelcarranza", first_seen: "2022-01-01 15:03", entitlements: {
         pro: {
             expires_date: moment.utc().add("days", 2).format()
         },
@@ -80,10 +80,10 @@ describe("events", () => {
 
         await timeout(500);
 
-        const doc = await admin.firestore().collection("revenuecat_customers").doc("miguelcarranza").get();
-        expect(doc.data()).toEqual(validPayload.customer_info);
+        const doc = await admin.firestore().collection("revenuecat_customers").doc("chairman_carranza").get();
+        expect(doc.data()).toEqual({...validPayload.customer_info, aliases: ["miguelcarranza", "chairman_carranza"] });
 
-        const additionalCustomerInfo = { original_app_user_id: "miguelcarranza", another_field: "baz" };
+        const additionalCustomerInfo = { original_app_user_id: "chairman_carranza", another_field: "baz" };
 
         const otherMockedRequest = getMockedRequest(createJWT(60, {...validPayload, customer_info: additionalCustomerInfo }, "test_secret")) as any;
 
@@ -91,8 +91,8 @@ describe("events", () => {
 
         await timeout(500);
 
-        const updatedDoc = await admin.firestore().collection("revenuecat_customers").doc("miguelcarranza").get();
-        expect(updatedDoc.data()).toEqual({...validPayload.customer_info, ...additionalCustomerInfo });
+        const updatedDoc = await admin.firestore().collection("revenuecat_customers").doc("chairman_carranza").get();
+        expect(updatedDoc.data()).toEqual({...validPayload.customer_info, ...additionalCustomerInfo, aliases: ["miguelcarranza", "chairman_carranza"] });
     });
 
     it("doesn't save the event if the REVENUECAT_CUSTOMERS_COLLECTION setting is not set", async () => {
@@ -119,7 +119,7 @@ describe("events", () => {
     });
 
     it("set custom claims for user if SET_CUSTOM_CLAIMS is set", async () => {
-        const testUserId = 'francisco';
+        const testUserId = validPayload.event.app_user_id;
 
         jest.resetModules();
         const originalProcessEnv = process.env;

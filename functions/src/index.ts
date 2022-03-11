@@ -21,11 +21,14 @@ interface Entitlement {
   'grace_period_expires_date': string;
 }
 
+
 interface BodyPayload {
   api_version: string;
   event: {
     id: string;
-    subscriber_info: {}
+    app_user_id: string;
+    subscriber_info: {},
+    aliases: string[]
   },
   customer_info: {
     original_app_user_id: string;
@@ -45,6 +48,7 @@ export const handler = functions.https.onRequest(async (request, response) => {
 
     const eventPayload = bodyPayload.event;
     const customerPayload = bodyPayload.customer_info;
+    const userId = eventPayload.app_user_id;
 
     if (EVENTS_COLLECTION) {
       const eventsCollection = firestore.collection(EVENTS_COLLECTION);
@@ -53,7 +57,10 @@ export const handler = functions.https.onRequest(async (request, response) => {
 
     if (CUSTOMERS_COLLECTION) {
       const customersCollection = firestore.collection(CUSTOMERS_COLLECTION);
-      await customersCollection.doc(customerPayload.original_app_user_id).set(customerPayload, { merge: true});
+      await customersCollection.doc(userId).set({
+        ...customerPayload,
+        aliases: eventPayload.aliases
+      }, { merge: true});
     }
 
     if (SET_CUSTOM_CLAIMS === "ENABLED") {
@@ -62,8 +69,6 @@ export const handler = functions.https.onRequest(async (request, response) => {
           const expiresDate = customerPayload.entitlements[entitlementID].expires_date;
           return expiresDate === null || moment.utc(expiresDate) >= moment.utc()
         });
-
-        const userId = customerPayload.original_app_user_id;
 
       try {
         const { customClaims } = await auth.getUser(userId);
