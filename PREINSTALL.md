@@ -1,10 +1,10 @@
 #### How this extension works
 
-Use this extension to enable Firebase as your backend for in-app purchases on Apple App Store, Google Play Store, and Amazon Appstore.
+Install this extension to use Firebase services as your RevenueCat backend for in-app purchases on Apple App Store, Google Play Store, and Amazon Appstore.
 
 The extension makes in-app purchases and subscriptions, controls access to premium content, and syncs customer purchase information to Firestore using [RevenueCat](https://www.revenuecat.com/).
 
-Use this extension to:
+This extension can:
 - Store purchase lifecycle events (e.g., trial starts, purchases, subscription renewals, billing issues) in Firestore and react to them.
 - Store and update information about customers and their purchases in Firestore.
 - Update information about customers' entitlements as Firebase Authentication [Custom Claims](https://firebase.google.com/docs/auth/admin/custom-claims).
@@ -22,11 +22,11 @@ Before installing this extension, set up the following Firebase services in your
 - [Cloud Firestore](https://firebase.google.com/docs/firestore) to store In-App Purchases & Subscriptions details.
   - Follow the steps in the [documentation](https://firebase.google.com/docs/firestore/quickstart#create) to create a Cloud Firestore database.
 - (optional) [Firebase Authentication](https://firebase.google.com/docs/auth) to enable different sign-up options for your users to enable Custom Claims management.
-- Enable the sign-in methods in the [Firebase console](https://console.firebase.google.com/project/_/authentication/providers) that you want to offer your users.
+  - Enable the sign-in methods in the [Firebase console](https://console.firebase.google.com/project/_/authentication/providers) that you want to offer your users.
 
 ##### RevenueCat
 
-- Create a new [Project](https://docs.revenuecat.com/docs/projects) in RevenueCat if you haven't already.
+- Create a [RevenueCat Project](https://docs.revenuecat.com/docs/projects) if you haven't already.
 - Set up a Firebase integration in [RevenueCat](https://app.revenuecat.com/): Go to your project settings, and under "Integrations", click "Add", then "Firebase".
 - From the newly created integration, copy your *shared secret*. You will need this to set up the extension.
 
@@ -47,3 +47,5 @@ You will be charged a small amount (typically around $0.01/month) for the Fireba
 - Cloud Functions
 
 This extension also requires you have a RevenueCat account. You are responsible for any costs associated with your RevenueCat usage ([RevenueCat pricing information](https://www.revenuecat.com/pricing)).
+
+
