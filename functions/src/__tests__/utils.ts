@@ -2,13 +2,14 @@ import nJwt, { JSONMap } from "njwt";
 
 // TODO: add docs
 export const EXPECTED_AUTH_ERROR = JSON.stringify({
-    error: { code:1 , message: "Incoming RevenueCat webhook could not be authenticated. Please check that the shared secret is set up correctly."}
+    code:1,
+    message: "Incoming RevenueCat webhook could not be authenticated. Please check that the shared secret is set up correctly."
 });
 
 export const createJWT = (expirationSeconds: number, payload: JSONMap, secretKey: string) => {
     var claims: JSONMap = {
         iss: "https://firebase-extension.revenuecat.com/",
-        payload: payload
+        payload: JSON.stringify(payload)
     }
 
     const jwt = nJwt.create(claims, secretKey);
@@ -48,6 +49,8 @@ export function getMockedResponse(expect: any, onSend: OnSend): MockedResponseCa
 
 export const getMockedRequest = (payload: any) => {
     return {
-        body: payload
+        body: {
+            token: payload
+        }
     }
 }

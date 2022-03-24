@@ -2,7 +2,7 @@
   "name": "functions",
   "scripts": {
     "lint": "eslint --ext .js,.ts .",
-    "test": "jest --watchAll=false --verbose=false",
+    "test": "jest --watchAll --verbose=false",
     "signer": "ts-node development/signer-server.ts",
     "test:emulator": "firebase emulators:exec --project=sample 'npm run test'",
     "build": "tsc",
