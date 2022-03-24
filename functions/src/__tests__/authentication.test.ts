@@ -12,8 +12,7 @@ describe("authentication", () => {
     it("should authenticate with a valid JWT", (done) => {
         const mockedResponse = getMockedResponse(expect, () => done())(200, {}) as any;
         const payload = validPayload;
-        const jwt = createJWT(60, payload, "test_secret");
-        const mockedRequest = getMockedRequest(jwt) as any;
+        const mockedRequest = getMockedRequest(createJWT(60, payload, "test_secret")) as any;
 
         api.handler(mockedRequest, mockedResponse);
     });
