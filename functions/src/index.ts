@@ -74,7 +74,7 @@ export const handler = functions.https.onRequest(async (request, response) => {
         const { customClaims } = await auth.getUser(userId);
         await admin.auth().setCustomUserClaims(userId, { ...(customClaims ? customClaims : {}), revenueCatEntitlements: activeEntitlements });  
       } catch (userError) { 
-        logMessage(`Error saving user: ${userError}`, "error");
+        logMessage(`Error saving user ${userId}: ${userError}`, "error");
       }
     }
 
