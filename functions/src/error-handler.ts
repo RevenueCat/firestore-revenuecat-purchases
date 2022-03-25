@@ -2,18 +2,14 @@ import { ExtensionError, InvalidApiVersionError, InvalidTokenError, UnknownError
 import { logger, Response } from "firebase-functions";
 
 interface ErrorPayload {
-    error: {
-        code: number,
-        message: string
-    }
+    code: number,
+    message: string
 }
 
 const constructResponsePayload = (exception: ExtensionError): ErrorPayload => {
     return {
-        error: {
-            code: exception.code(),
-            message: exception.message
-        }
+        code: exception.code(),
+        message: exception.message
     }
 }
 
