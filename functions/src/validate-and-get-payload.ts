@@ -7,13 +7,14 @@ export const validateAndGetPayload = (sharedSecret: string) => (request: Request
     try {
       const verification = nJwt.verify(request.body.token, sharedSecret) as { body: { payload?: string } };
 
-      if (verification.body.payload) {
-        const bodyPayload = JSON.parse(verification.body.payload);
-        return bodyPayload;
-      }
-    } catch(e) { 
-        logger.error('Error while verifying request', e);
-
+      if (!verification.body.payload) {
         throw new InvalidTokenError();
+      }
+      
+      return JSON.parse(verification.body.payload);      
+    } catch(e) { 
+      logger.error('Error while verifying request', e);
+
+      throw new InvalidTokenError();
     }
   };
