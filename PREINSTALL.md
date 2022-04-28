@@ -1,5 +1,3 @@
-#### How this extension works
-
 Install this extension to use Firebase services as your RevenueCat backend for in-app purchases on Apple App Store, Google Play Store, and Amazon Appstore.
 
 The extension makes in-app purchases and subscriptions, controls access to premium content, and syncs customer purchase information to Firestore using [RevenueCat](https://www.revenuecat.com/).
