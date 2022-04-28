@@ -11,6 +11,8 @@ author:
   authorName: RevenueCat
   url: https://github.com/RevenueCat/revenuecat-firebase-extension
 
+sourceUrl: https://github.com/RevenueCat/revenuecat-firebase-extension/tree/main
+
 billingRequired: true
 
 roles:
