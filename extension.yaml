@@ -124,6 +124,7 @@ params:
     required: true    
   - param: REVENUECAT_SHARED_SECRET
     label: RevenueCat Firebase Integration Shared Secret
+    type: secret
     description: >-
       What is the webhook shared secret for the Firebase integration of your RevenueCat project?
       You will find this in the RevenueCat dashboard under Projects > [your project] > Integrations > Firebase
