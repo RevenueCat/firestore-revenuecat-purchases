@@ -1,6 +1,7 @@
 {
   "name": "functions",
   "scripts": {
+    "prepare": "npm run build",
     "lint": "eslint --ext .js,.ts .",
     "test": "jest --watchAll=false --verbose=false",
     "signer": "ts-node development/signer-server.ts",
