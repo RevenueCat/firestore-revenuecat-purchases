@@ -130,3 +130,28 @@ params:
     example: my_shared_secret
     validationRegex: "^.+$"
     required: true
+events:
+  - type: com.revenuecat.v1.test
+    description: Occurs whenever a test event issued through the RevenueCat dashboard.
+  - type: com.revenuecat.v1.initial_purchase
+    description: Occurs whenever a new subscription has been purchased.
+  - type: com.revenuecat.v1.non_renewing_puchase
+    description: Occurs whenever a customer has made a purchase that will not auto-renew.
+  - type: com.revenuecat.v1.renewel
+    description: Occurs whenever an existing subscription has been renewed. This may occur at the end of the current billing period or later if a lapsed user re-subscribes.
+  - type: com.revenuecat.v1.product_change
+    description: Occurs whenever a subscriber has changed the product of their subscription
+  - type: com.revenuecat.v1.cancellation
+    description: Occurs whenever a subscription or non-renewing purchase has been cancelled. See cancellation reasons for more details.
+  - type: com.revenuecat.v1.uncancellation
+    description: Occurs whenever an auto-renew status has been re-enabled for a subscription.
+  - type: com.revenuecat.v1.billing_issue
+    description: Occurs whenever there has been a problem trying to charge the subscriber. This does not mean the subscription has expired.
+  - type: com.revenuecat.v1.subscriber_alias
+    description: Deprecated. Occurs whenever a new app_user_id has been registered for an existing subscriber.
+  - type: com.revenuecat.v1.subscription_paused
+    description: Occurs whenever a subscription has been paused.
+  - type: com.revenuecat.v1.transfer
+    description: Occurs whenever a transfer of transactions and entitlements was initiated between one App User ID(s) to another.
+  - type: com.revenuecat.v1.expiration
+    description: Occurs whenever a subscription has expired and access should be removed.
