@@ -1,3 +1,5 @@
+RevenueCat’s app monetization platform empowers developers to confidently deploy in-app purchases and subscriptions, centralize data, and grow revenue. RevenueCat builds and adapts to the ever-changing needs of in-app purchase infrastructure, freeing app businesses to invest their time and resources in growing their product.
+
 Install this extension to use Firebase services as your RevenueCat backend for in-app purchases on Apple App Store, Google Play Store, and Amazon Appstore.
 
 The extension makes in-app purchases and subscriptions, controls access to premium content, and syncs customer purchase information to Firestore using [RevenueCat](https://www.revenuecat.com/).
