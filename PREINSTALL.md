@@ -3,6 +3,7 @@ Install this extension to use Firebase services as your RevenueCat backend for i
 The extension makes in-app purchases and subscriptions, controls access to premium content, and syncs customer purchase information to Firestore using [RevenueCat](https://www.revenuecat.com/).
 
 This extension can:
+
 - Store purchase lifecycle events (e.g., trial starts, purchases, subscription renewals, billing issues) in Firestore and react to them.
 - Store and update information about customers and their purchases in Firestore.
 - Update information about customers' entitlements as Firebase Authentication [Custom Claims](https://firebase.google.com/docs/auth/admin/custom-claims).
