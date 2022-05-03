@@ -106,7 +106,30 @@ describe("events", () => {
         const { handler } = require("../index")
 
         const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(200, {}) as any;
-        const mockedRequest = getMockedRequest(createJWT(60, {...validPayload, customer_info: {...validPayload.customer_info, original_app_user_id: "not_save_this"}}, "test_secret")) as any;
+        const mockedRequest = getMockedRequest(createJWT(60, { ...validPayload, customer_info: { ...validPayload.customer_info, original_app_user_id: "not_save_this" } }, "test_secret")) as any;
+
+        handler(mockedRequest, mockedResponse);
+
+        await timeout(300);
+
+        const doc = await admin.firestore().collection("revenuecat_customers").doc("not_save_this").get();
+        expect(doc.data()).toEqual(undefined);
+
+        process.env = originalProcessEnv;
+    });
+
+    it("doesn't save the event if the REVENUECAT_CUSTOMERS_COLLECTION setting without a userid", async () => {
+        jest.resetModules();
+        const originalProcessEnv = process.env;
+        process.env = {
+            ...originalProcessEnv,
+            REVENUECAT_CUSTOMERS_COLLECTION: "customers"
+        }
+
+        const { handler } = require("../index")
+
+        const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(200, {}) as any;
+        const mockedRequest = getMockedRequest(createJWT(60, { ...validPayload, app_user_id: null, customer_info: { ...validPayload.customer_info, original_app_user_id: "not_save_this" } }, "test_secret")) as any;
 
         handler(mockedRequest, mockedResponse);
 
