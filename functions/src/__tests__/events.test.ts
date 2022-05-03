@@ -123,7 +123,7 @@ describe("events", () => {
         const originalProcessEnv = process.env;
         process.env = {
             ...originalProcessEnv,
-            REVENUECAT_CUSTOMERS_COLLECTION: "cutomers"
+            REVENUECAT_CUSTOMERS_COLLECTION: "customers"
         }
 
         const { handler } = require("../index")
