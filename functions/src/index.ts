@@ -63,7 +63,7 @@ export const handler = functions.https.onRequest(async (request, response) => {
       }, { merge: true });
     }
 
-    if (SET_CUSTOM_CLAIMS === "ENABLED") {
+    if (SET_CUSTOM_CLAIMS === "ENABLED" && userId) {
       const activeEntitlements = Object.keys(customerPayload.entitlements)
         .filter(entitlementID => {
           const expiresDate = customerPayload.entitlements[entitlementID].expires_date;
