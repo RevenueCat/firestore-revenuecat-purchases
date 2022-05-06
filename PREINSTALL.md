@@ -50,5 +50,6 @@ You will be charged a small amount (typically around $0.01/month) for the Fireba
 
 - Cloud Firestore
 - Cloud Functions
+- If you enable events [Eventarc fees apply](https://cloud.google.com/eventarc/pricing).
 
 This extension also requires you have a RevenueCat account. You are responsible for any costs associated with your RevenueCat usage ([RevenueCat pricing information](https://www.revenuecat.com/pricing)).
