@@ -3,6 +3,7 @@ Install this extension to use Firebase services as your RevenueCat backend for i
 The extension makes in-app purchases and subscriptions, controls access to premium content, and syncs customer purchase information to Firestore using [RevenueCat](https://www.revenuecat.com/).
 
 This extension can:
+
 - Store purchase lifecycle events (e.g., trial starts, purchases, subscription renewals, billing issues) in Firestore and react to them.
 - Store and update information about customers and their purchases in Firestore.
 - Update information about customers' entitlements as Firebase Authentication [Custom Claims](https://firebase.google.com/docs/auth/admin/custom-claims).
@@ -10,6 +11,10 @@ This extension can:
 RevenueCat supports both native iOS and Android apps as well as hybrid cross-platform apps in [React Native](https://docs.revenuecat.com/docs/reactnative), [Flutter](https://docs.revenuecat.com/docs/flutter), [Unity](https://docs.revenuecat.com/docs/unity), [Cordova](https://docs.revenuecat.com/docs/cordova), and [Ionic](https://docs.revenuecat.com/docs/ionic).
 
 You need to [create a RevenueCat account](https://app.revenuecat.com/signup) or already have one set up to use this extension.
+
+#### Events
+
+This extension emits events, which allows you to listen to and run custom logic at different trigger points during the functioning of the extension. For example you can listen to events when a new subscription has been purchased via the `initial_purchase` event, or whenever a subscription or non-renewing purchase has been cancelled through the `cancellation` event.
 
 #### Additional setup
 
@@ -26,7 +31,7 @@ Before installing this extension, set up the following Firebase services in your
 
 - Create a [RevenueCat Project](https://docs.revenuecat.com/docs/projects) if you haven't already.
 - Set up a Firebase integration in [RevenueCat](https://app.revenuecat.com/): Go to your project settings, and under "Integrations", click "Add", then "Firebase".
-- From the newly created integration, copy your *shared secret*. You will need this to set up the extension.
+- From the newly created integration, copy your _shared secret_. You will need this to set up the extension.
 
 ##### Mobile App
 
@@ -45,5 +50,3 @@ You will be charged a small amount (typically around $0.01/month) for the Fireba
 - Cloud Functions
 
 This extension also requires you have a RevenueCat account. You are responsible for any costs associated with your RevenueCat usage ([RevenueCat pricing information](https://www.revenuecat.com/pricing)).
-
-
