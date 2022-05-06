@@ -83,7 +83,7 @@ export const handler = functions.https.onRequest(async (request, response) => {
       );
     }
 
-    if (SET_CUSTOM_CLAIMS === "ENABLED") {
+    if (SET_CUSTOM_CLAIMS === "ENABLED" && userId) {
       const activeEntitlements = Object.keys(
         customerPayload.entitlements
       ).filter((entitlementID) => {

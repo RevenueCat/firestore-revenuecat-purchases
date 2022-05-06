@@ -1,6 +1,6 @@
 #### Set your Cloud Firestore security rules
 
-Set up your security roles so that only authenticated users can access customer information, and that each user can only access their own information. 
+[Set up your security roles](https://docs.revenuecat.com/docs/firebase-integration#set-your-cloud-firestore-security-rules) so that only authenticated users can access customer information, and that each user can only access their own information. 
 
 ```
 rules_version = '2';
@@ -26,10 +26,10 @@ ${function:handler.url}
 
 ##### Configure the RevenueCat SDK in your mobile app
 
-Follow the steps in the [RevenueCat documentation](https://docs.revenuecat.com/docs/getting-started) to add the RevenueCat SDK to your mobile app. In addition, follow the instructions to set up the Firebase Integration inside the app by:
+Follow the steps in the [RevenueCat documentation](https://docs.revenuecat.com/docs/getting-started) to add the RevenueCat SDK to your mobile app. In addition, follow the instructions to [set up the Firebase Integration](https://docs.revenuecat.com/docs/firebase-integration) inside the app by:
 
-- Listening to Firebase Authentication events and [setting the RevenueCat app user ID to the Firebase UID](https://docs.revenuecat.com/docs/firebase#keeping-user-ids-in-sync).
-- Setting the [reserved RevenueCat subscriber attribute](https://docs.revenuecat.com/docs/subscriber-attributes#reserved-attributes) `$firebaseAppInstanceId` to the Firebase App Instance ID if you want to send events to Google Analytics for Firebase.
+- Listening to Firebase Authentication events and [setting the RevenueCat app user ID to the Firebase UID](https://docs.revenuecat.com/docs/firebase-integration#2-set-firebase-user-identity-in-revenuecat).
+- Setting the [reserved RevenueCat subscriber attribute](https://docs.revenuecat.com/docs/firebase-integration#set-firebaseappinstanceid-as-a-subscriber-attribute) `$firebaseAppInstanceId` to the Firebase App Instance ID if you want to send events to Google Analytics for Firebase.
 
 ### Using the extension
 
