@@ -6,7 +6,7 @@ import { requestErrorHandler } from "./error-handler";
 import moment from "moment";
 import { logMessage } from "./log-message";
 
-import { getEventarc } from "firebase-admin/lib/eventarc";
+import { getEventarc } from "firebase-admin/eventarc";
 
 admin.initializeApp();
 
@@ -65,7 +65,7 @@ export const handler = functions.https.onRequest(async (request, response) => {
     const eventPayload = bodyPayload.event;
     const customerPayload = bodyPayload.customer_info;
     const userId = eventPayload.app_user_id;
-    const eventType = eventPayload.type.toLowerCase();
+    const eventType = (eventPayload.type || "").toLowerCase();
 
     if (EVENTS_COLLECTION) {
       const eventsCollection = firestore.collection(EVENTS_COLLECTION);
