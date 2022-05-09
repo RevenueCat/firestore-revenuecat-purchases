@@ -16,7 +16,7 @@ describe("events", () => {
         global.firebaseTest.cleanup();
     });
 
-    const validPayload = { api_version: "1.0.0", event: { id: "uuid", app_user_id: "chairman_carranza", bar: "baz", aliases: ["miguelcarranza", "chairman_carranza"] }, customer_info: { original_app_user_id: "miguelcarranza", first_seen: "2022-01-01 15:03", entitlements: {
+    const validPayload = { api_version: "0.0.2", event: { id: "uuid", app_user_id: "chairman_carranza", bar: "baz", aliases: ["miguelcarranza", "chairman_carranza"] }, customer_info: { original_app_user_id: "miguelcarranza", first_seen: "2022-01-01 15:03", entitlements: {
         pro: {
             expires_date: moment.utc().add("days", 2).format()
         },
