@@ -9,9 +9,9 @@ license: apache-2.0
 
 author:
   authorName: RevenueCat
-  url: https://github.com/RevenueCat/revenuecat-firebase-extension
+  url: https://github.com/RevenueCat/firestore-revenuecat-purchases
 
-sourceUrl: https://github.com/RevenueCat/revenuecat-firebase-extension/tree/main
+sourceUrl: https://github.com/RevenueCat/firestore-revenuecat-purchases/tree/main
 
 billingRequired: true
 
