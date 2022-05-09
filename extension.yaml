@@ -138,7 +138,7 @@ events:
     description: Occurs whenever a new subscription has been purchased.
   - type: com.revenuecat.v1.non_renewing_puchase
     description: Occurs whenever a customer has made a purchase that will not auto-renew.
-  - type: com.revenuecat.v1.renewel
+  - type: com.revenuecat.v1.renewal
     description: Occurs whenever an existing subscription has been renewed. This may occur at the end of the current billing period or later if a lapsed user re-subscribes.
   - type: com.revenuecat.v1.product_change
     description: Occurs whenever a subscriber has changed the product of their subscription
