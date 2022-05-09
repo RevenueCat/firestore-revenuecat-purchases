@@ -7,7 +7,7 @@ describe("authentication", () => {
         global.firebaseTest.cleanup();
     });
 
-    const validPayload = { api_version: "1.0.0", event: { id: "uuid", app_user_id: "toni_free", aliases: ["toni_free"] }, customer_info: { original_app_user_id: "tonidelevate" } };
+    const validPayload = { api_version: "0.0.2", event: { id: "uuid", app_user_id: "toni_free", aliases: ["toni_free"] }, customer_info: { original_app_user_id: "tonidelevate" } };
 
     it("should authenticate with a valid JWT", (done) => {
         const mockedResponse = getMockedResponse(expect, () => done())(200, {}) as any;
@@ -61,16 +61,16 @@ describe("authentication", () => {
         api.handler(mockedRequest, mockedResponse);
     });
 
-    it("returns a version error if it's not the same", (done) => {
+    it.only("returns a version error if it's not the same", (done) => {
         const expectedError = JSON.stringify({
             code: 2,
-            message: "The version of this extension is not the same. Extension version 1.0.0, Api version: 0.0.9. Please retry the request with the correct version"
+            message: "The version of this extension is not the same. Extension version 0.0.2, Api version: 0.0.1. Please retry the request with the correct version"
         });
 
         const mockedResponse = getMockedResponse(expect, () => done())(400, expectedError) as any;
         const payload = {
             ...validPayload,
-            api_version: "0.0.9"
+            api_version: "0.0.1"
         };
 
         api.handler(getMockedRequest(createJWT(60, payload, "test_secret")) as any, mockedResponse);
