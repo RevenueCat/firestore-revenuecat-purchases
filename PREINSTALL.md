@@ -14,6 +14,10 @@ RevenueCat supports both native iOS and Android apps as well as hybrid cross-pla
 
 You need to [create a RevenueCat account](https://app.revenuecat.com/signup) or already have one set up to use this extension.
 
+#### Events
+
+This extension emits events, which allows you to listen to and run custom logic at different trigger points during the functioning of the extension. For example you can listen to events when a new subscription has been purchased via the `initial_purchase` event, or whenever a subscription or non-renewing purchase has been cancelled through the `cancellation` event.
+
 #### Additional setup
 
 ##### Firebase
@@ -29,7 +33,7 @@ Before installing this extension, set up the following Firebase services in your
 
 - Create a [RevenueCat Project](https://docs.revenuecat.com/docs/projects) if you haven't already.
 - [Set up a Firebase integration](https://docs.revenuecat.com/docs/firebase-integration) in [RevenueCat](https://app.revenuecat.com/): Go to your project settings, and under "Integrations", click "Add", then "Firebase".
-- From the newly created integration, copy your *shared secret*. You will need this to set up the extension.
+- From the newly created integration, copy your _shared secret_. You will need this to set up the extension.
 
 ##### Mobile App
 
@@ -46,7 +50,6 @@ You will be charged a small amount (typically around $0.01/month) for the Fireba
 
 - Cloud Firestore
 - Cloud Functions
+- If you enable events [Eventarc fees apply](https://cloud.google.com/eventarc/pricing).
 
 This extension also requires you have a RevenueCat account. You are responsible for any costs associated with your RevenueCat usage ([RevenueCat pricing information](https://www.revenuecat.com/pricing)).
-
-
