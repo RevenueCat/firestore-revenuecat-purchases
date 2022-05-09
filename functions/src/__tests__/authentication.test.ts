@@ -61,7 +61,7 @@ describe("authentication", () => {
         api.handler(mockedRequest, mockedResponse);
     });
 
-    it.only("returns a version error if it's not the same", (done) => {
+    it("returns a version error if it's not the same", (done) => {
         const expectedError = JSON.stringify({
             code: 2,
             message: "The version of this extension is not the same. Extension version 0.0.2, Api version: 0.0.1. Please retry the request with the correct version"
