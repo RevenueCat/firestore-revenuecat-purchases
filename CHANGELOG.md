@@ -1,3 +1,6 @@
+## Version 0.1.0
+
+General audience release.
 ## Version 0.0.2
 
 GitHub repository was renamed to firestore-revenuecat-purchases
