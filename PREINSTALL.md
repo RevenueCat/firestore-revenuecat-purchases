@@ -53,7 +53,7 @@ This extension uses the following Firebase services which may have associated ch
 
 This extension also uses the following third-party services:
 
-- RevenueCat Payments ([RevenueCat pricing information](https://www.revenuecat.com/pricing)).
+- RevenueCat ([RevenueCat pricing information](https://www.revenuecat.com/pricing)).
 
 You are responsible for any costs associated with your use of these services.
 
