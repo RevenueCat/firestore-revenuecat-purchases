@@ -1,6 +1,7 @@
 # firestore-revenuecat-purchases
 
 [Documentation](https://docs.revenuecat.com/docs/firebase-integration)
+
 [Install this extension](https://firebase.google.com/products/extensions/revenuecat-firestore-revenuecat-purchases)
 
 This extension uses Firebase services as your RevenueCat backend for in-app purchases on Apple App Store, Google Play Store, and Amazon Appstore to control access to premium content and sync customer purchase information to Firestore. For example, you might want to:
