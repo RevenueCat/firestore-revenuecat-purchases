@@ -12,4 +12,4 @@ This extension uses Firebase services as your RevenueCat backend for in-app purc
 For installation pre-requisites, view:
 [PREINSTALL.md](https://github.com/RevenueCat/firestore-revenuecat-purchases/blob/main/PREINSTALL.md)
 
-Install this extension directly from your [Firebase Console](https://console.firebase.google.com/u/0/project/_/extensions/install?ref=revenuecat%2Ffirestore-revenuecat-purchases@0.1.1)
+Install this extension directly from your [Firebase Console](https://console.firebase.google.com/u/0/project/_/extensions/install?ref=revenuecat%2Ffirestore-revenuecat-purchases)
