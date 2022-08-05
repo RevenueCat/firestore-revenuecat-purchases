@@ -1,3 +1,6 @@
+## Version 0.1.2
+
+- Fixes: https://github.com/RevenueCat/firestore-revenuecat-purchases/issues/33
 ## Version 0.1.1
 
 - Updated billing copy in PREINSTALL.md.

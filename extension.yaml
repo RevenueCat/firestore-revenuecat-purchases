@@ -1,5 +1,5 @@
 name: firestore-revenuecat-purchases
-version: 0.1.1
+version: 0.1.2
 specVersion: v1beta  # Firebase Extensions specification version (do not edit)
 
 displayName: Enable In-App Purchases with RevenueCat
@@ -31,7 +31,7 @@ resources:
     properties:
       location: ${LOCATION}
       runtime: nodejs14
-      httpsTrigger: {}      
+      httpsTrigger: {}
 
 params:
   - param: LOCATION
@@ -101,17 +101,17 @@ params:
       What is the path to the Cloud Firestore collection where the extension should store RevenueCat customer details?
       This can be the location of an existing user collection, the extension will not overwrite your existing data but rather merge the RevenueCat data into your existing firestore documents.
       Leave empty if you do not want the extension to store RevenueCat customer details.
-      
+
       (You can later modify this value in Google Firestore > Extensions > Extension Configuration > Reconfigure extension)
     validationRegex: "^[^/]+(/[^/]+/[^/]+)*$"
     validationErrorMessage: Firestore collection paths must be an odd number of segments separated by slashes, e.g. "path/to/collection".
-    required: false    
+    required: false
   - param: SET_CUSTOM_CLAIMS
     label: Should custom claims be set in Firebase Auth with the user's active entitlements?
     description: >-
       Do you want to automatically update your Firebase Authentication User's custom claims with their current entitlements?
       (More information: https://firebase.google.com/docs/auth/admin/custom-claims)
-      
+
       If set to "ENABLED", the extension will consider the app_user_id of the user to match the user's Firebase Authentication UID
       and set a "Custom Claim" with their current active entitlements.
     type: select
@@ -121,7 +121,7 @@ params:
       - label: "DISABLED"
         value: "DISABLED"
     default: "DISABLED"
-    required: true    
+    required: true
   - param: REVENUECAT_SHARED_SECRET
     label: RevenueCat Firebase Integration Shared Secret
     type: secret
