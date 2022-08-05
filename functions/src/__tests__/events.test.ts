@@ -3,7 +3,7 @@ import * as api from "../index";
 import * as admin from "firebase-admin";
 import moment from "moment";
 
-function timeout(ms: number) {
+function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
@@ -27,6 +27,44 @@ describe("events", () => {
     customer_info: {
       original_app_user_id: "miguelcarranza",
       first_seen: "2022-01-01 15:03",
+      subscriptions: {
+        pro: {
+          purchase_date: moment.utc().subtract("days", 28).format(),
+          expires_date: moment.utc().add("days", 2).format(),
+          period_type: "normal",
+          original_purchase_date: moment.utc().subtract("days", 28).format(),
+          store: "app_store",
+          is_sandbox: true,
+          unsubscribe_detected_at: null,
+          billing_issues_detected_at: null,
+          grace_period_expires_date: null,
+          ownership_type: "PURCHASED",
+        },
+        expired: {
+          purchase_date: moment.utc().subtract("days", 32).format(),
+          expires_date: moment.utc().subtract("days", 2).format(),
+          period_type: "normal",
+          original_purchase_date: moment.utc().subtract("days", 32).format(),
+          store: "app_store",
+          is_sandbox: true,
+          unsubscribe_detected_at: moment.utc().subtract("days", 5).format(),
+          billing_issues_detected_at: null,
+          grace_period_expires_date: null,
+          ownership_type: "PURCHASED",
+        },
+        lifetime: {
+          purchase_date: moment.utc().subtract("days", 32).format(),
+          expires_date: null,
+          period_type: "normal",
+          original_purchase_date: moment.utc().subtract("days", 32).format(),
+          store: "app_store",
+          is_sandbox: true,
+          unsubscribe_detected_at: null,
+          billing_issues_detected_at: null,
+          grace_period_expires_date: null,
+          ownership_type: "PURCHASED",
+        },
+      },
       entitlements: {
         pro: {
           expires_date: moment.utc().add("days", 2).format(),
@@ -68,7 +106,7 @@ describe("events", () => {
 
     api.handler(mockedRequest, mockedResponse);
 
-    await timeout(300);
+    await sleep(300);
 
     const doc = await admin
       .firestore()
@@ -105,7 +143,7 @@ describe("events", () => {
 
     handler(mockedRequest, mockedResponse);
 
-    await timeout(300);
+    await sleep(300);
 
     const doc = await admin
       .firestore()
@@ -118,6 +156,12 @@ describe("events", () => {
   });
 
   it("saves the customer_info in the customer collection", async () => {
+    await admin
+      .firestore()
+      .collection("revenuecat_customers")
+      .doc("chairman_carranza")
+      .delete();
+
     const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(
       200,
       {}
@@ -128,13 +172,14 @@ describe("events", () => {
 
     api.handler(mockedRequest, mockedResponse);
 
-    await timeout(500);
+    await sleep(500);
 
     const doc = await admin
       .firestore()
       .collection("revenuecat_customers")
       .doc("chairman_carranza")
       .get();
+
     expect(doc.data()).toEqual({
       ...validPayload.customer_info,
       aliases: ["miguelcarranza", "chairman_carranza"],
@@ -148,14 +193,103 @@ describe("events", () => {
     const otherMockedRequest = getMockedRequest(
       createJWT(
         60,
-        { ...validPayload, customer_info: additionalCustomerInfo },
+        {
+          ...validPayload,
+          customer_info: {
+            ...validPayload.customer_info,
+            ...additionalCustomerInfo,
+          },
+        },
         "test_secret"
       )
     ) as any;
 
     api.handler(otherMockedRequest, mockedResponse);
 
-    await timeout(500);
+    await sleep(500);
+
+    const updatedDoc = await admin
+      .firestore()
+      .collection("revenuecat_customers")
+      .doc("chairman_carranza")
+      .get();
+
+    expect(updatedDoc.data()).toEqual({
+      ...validPayload.customer_info,
+      ...additionalCustomerInfo,
+      aliases: ["miguelcarranza", "chairman_carranza"],
+    });
+  });
+
+  it("removes entitlements/subscriptions from the customer collection", async () => {
+    await admin
+      .firestore()
+      .collection("revenuecat_customers")
+      .doc("chairman_carranza")
+      .delete();
+
+    const initialPayload = {
+      ...validPayload,
+      customer_info: {
+        ...validPayload.customer_info,
+        subscriptions: {
+          ...validPayload.customer_info.subscriptions,
+          promotional: {
+            purchase_date: moment.utc().subtract("days", 28).format(),
+            expires_date: moment.utc().add("days", 2).format(),
+            period_type: "normal",
+            original_purchase_date: moment.utc().subtract("days", 28).format(),
+            store: "promotional",
+            is_sandbox: false,
+            unsubscribe_detected_at: null,
+            billing_issues_detected_at: null,
+            grace_period_expires_date: null,
+          },
+        },
+        entitlements: {
+          ...validPayload.customer_info.entitlements,
+          promotional: {
+            expires_date: moment.utc().add("days", 4).format(),
+          },
+        },
+      },
+    };
+
+    const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(
+      200,
+      {}
+    ) as any;
+    const mockedRequest = getMockedRequest(
+      createJWT(60, initialPayload, "test_secret")
+    ) as any;
+
+    api.handler(mockedRequest, mockedResponse);
+
+    await sleep(500);
+
+    const doc = await admin
+      .firestore()
+      .collection("revenuecat_customers")
+      .doc("chairman_carranza")
+      .get();
+
+    expect(doc.data()).toEqual({
+      ...initialPayload.customer_info,
+      aliases: ["miguelcarranza", "chairman_carranza"],
+    });
+
+    const otherMockedRequest = getMockedRequest(
+      createJWT(
+        60,
+        // When promotionals are removed, neither customer_info nor subscriptions will contain them anymore
+        validPayload,
+        "test_secret"
+      )
+    ) as any;
+
+    api.handler(otherMockedRequest, mockedResponse);
+
+    await sleep(500);
 
     const updatedDoc = await admin
       .firestore()
@@ -164,7 +298,6 @@ describe("events", () => {
       .get();
     expect(updatedDoc.data()).toEqual({
       ...validPayload.customer_info,
-      ...additionalCustomerInfo,
       aliases: ["miguelcarranza", "chairman_carranza"],
     });
   });
@@ -199,7 +332,7 @@ describe("events", () => {
 
     handler(mockedRequest, mockedResponse);
 
-    await timeout(300);
+    await sleep(300);
 
     const doc = await admin
       .firestore()
@@ -242,7 +375,7 @@ describe("events", () => {
 
     handler(mockedRequest, mockedResponse);
 
-    await timeout(300);
+    await sleep(300);
 
     const doc = await admin
       .firestore()
@@ -290,7 +423,7 @@ describe("events", () => {
       },
     });
 
-    await timeout(100);
+    await sleep(100);
 
     const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(
       200,
@@ -312,7 +445,7 @@ describe("events", () => {
 
     handler(mockedRequest, mockedResponse);
 
-    await timeout(500);
+    await sleep(500);
 
     const { customClaims } = await auth.getUser(testUserId);
 
@@ -357,7 +490,7 @@ describe("events", () => {
       },
     });
 
-    await timeout(100);
+    await sleep(100);
 
     const mockedResponse = getMockedResponse(expect, (resp) => {
       expect(resp).toEqual({});
@@ -378,6 +511,6 @@ describe("events", () => {
     ) as any;
 
     await handler(mockedRequest, mockedResponse);
-    await timeout(500);
+    await sleep(500);
   });
 });
