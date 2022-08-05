@@ -74,12 +74,12 @@ export const handler = functions.https.onRequest(async (request, response) => {
 
     if (CUSTOMERS_COLLECTION && userId) {
       const customersCollection = firestore.collection(CUSTOMERS_COLLECTION);
+
       await customersCollection.doc(userId).set(
         {
           ...customerPayload,
           aliases: eventPayload.aliases,
-        },
-        { merge: true }
+        }
       );
     }
 
