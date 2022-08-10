@@ -84,6 +84,13 @@ export const handler = functions.https.onRequest(async (request, response) => {
         },
         { merge: true }
       );
+
+      await customersCollection.doc(userId).update(
+        {
+          ...customerPayload,
+          aliases: eventPayload.aliases,
+        },
+      );
     }
 
     if (SET_CUSTOM_CLAIMS === "ENABLED" && userId) {
