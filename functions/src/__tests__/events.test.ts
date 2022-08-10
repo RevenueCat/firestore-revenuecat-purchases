@@ -169,6 +169,71 @@ describe("events", () => {
     });
   });
 
+  it("handles ID placeholders in customer collection parameter", async () => {
+    jest.resetModules();
+    const originalProcessEnv = process.env;
+    process.env = {
+      ...originalProcessEnv,
+      REVENUECAT_CUSTOMERS_COLLECTION: "users/{app_user_id}/revenuecat_info",
+    };
+
+    const { handler } = require("../index");
+
+    const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(
+      200,
+      {}
+    ) as any;
+    const mockedRequest = getMockedRequest(
+      createJWT(60, validPayload, "test_secret")
+    ) as any;
+
+    handler(mockedRequest, mockedResponse);
+
+    await timeout(500);
+
+    const doc = await admin
+      .firestore()
+      .collection("users")
+      .doc("chairman_carranza")
+      .collection("revenuecat_info")
+      .doc("chairman_carranza")
+      .get();
+
+    expect(doc.data()).toEqual({
+      ...validPayload.customer_info,
+      aliases: ["miguelcarranza", "chairman_carranza"],
+    });
+
+    const additionalCustomerInfo = {
+      original_app_user_id: "chairman_carranza",
+      another_field: "baz",
+    };
+
+    const otherMockedRequest = getMockedRequest(
+      createJWT(
+        60,
+        { ...validPayload, customer_info: additionalCustomerInfo },
+        "test_secret"
+      )
+    ) as any;
+
+    handler(otherMockedRequest, mockedResponse);
+
+    await timeout(500);
+
+    const updatedDoc = await admin
+      .firestore()
+      .collection("revenuecat_customers")
+      .doc("chairman_carranza")
+      .get();
+    expect(updatedDoc.data()).toEqual({
+      ...validPayload.customer_info,
+      ...additionalCustomerInfo,
+      aliases: ["miguelcarranza", "chairman_carranza"],
+    });
+    process.env = originalProcessEnv;
+  });
+
   it("doesn't save the event if the REVENUECAT_CUSTOMERS_COLLECTION setting is not set", async () => {
     jest.resetModules();
     const originalProcessEnv = process.env;
@@ -188,9 +253,9 @@ describe("events", () => {
         60,
         {
           ...validPayload,
-          customer_info: {
-            ...validPayload.customer_info,
-            original_app_user_id: "not_save_this",
+          event: {
+            ...validPayload.event,
+            app_user_id: "not_save_this",
           },
         },
         "test_secret"
@@ -246,7 +311,7 @@ describe("events", () => {
 
     const doc = await admin
       .firestore()
-      .collection("revenuecat_customers")
+      .collection("customers")
       .doc("not_save_this")
       .get();
     expect(doc.data()).toEqual(undefined);
@@ -325,6 +390,7 @@ describe("events", () => {
     );
 
     expect(anotherCustomClaims).toEqual(undefined);
+    process.env = originalProcessEnv;
   });
 
   it("fails gracefully seting custom claims for user if SET_CUSTOM_CLAIMS is set but user doesn't exist", async () => {
@@ -379,5 +445,6 @@ describe("events", () => {
 
     await handler(mockedRequest, mockedResponse);
     await timeout(500);
+    process.env = originalProcessEnv;
   });
 });

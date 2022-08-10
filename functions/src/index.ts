@@ -73,7 +73,10 @@ export const handler = functions.https.onRequest(async (request, response) => {
     }
 
     if (CUSTOMERS_COLLECTION && userId) {
-      const customersCollection = firestore.collection(CUSTOMERS_COLLECTION);
+      const customersCollection = firestore.collection(
+        CUSTOMERS_COLLECTION.replace("{app_user_id}", userId)
+      );
+
       await customersCollection.doc(userId).set(
         {
           ...customerPayload,
