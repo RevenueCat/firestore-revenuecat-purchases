@@ -1,3 +1,8 @@
+## Version 0.1.3
+
+- Reverts the changes made in 0.1.2 for safety, as that introduced a regression for users that would
+have existing user collections. This is a temporary measure before adding a more robust customer collection configuration.
+
 ## Version 0.1.2
 
 - Fixes: https://github.com/RevenueCat/firestore-revenuecat-purchases/issues/33
