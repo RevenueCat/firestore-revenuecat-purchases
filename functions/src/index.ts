@@ -77,20 +77,16 @@ export const handler = functions.https.onRequest(async (request, response) => {
         CUSTOMERS_COLLECTION.replace("{app_user_id}", userId)
       );
 
-      await customersCollection.doc(userId).set(
-        {
-          ...customerPayload,
-          aliases: eventPayload.aliases,
-        },
-        { merge: true }
-      );
+      const payloadToWrite = {
+        ...customerPayload,
+        aliases: eventPayload.aliases,
+      };
 
-      await customersCollection.doc(userId).update(
-        {
-          ...customerPayload,
-          aliases: eventPayload.aliases,
-        },
-      );
+      await customersCollection
+        .doc(userId)
+        .set(payloadToWrite, { merge: true });
+
+      await customersCollection.doc(userId).update(payloadToWrite);
     }
 
     if (SET_CUSTOM_CLAIMS === "ENABLED" && userId) {
