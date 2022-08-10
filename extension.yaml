@@ -102,6 +102,10 @@ params:
       This can be the location of an existing user collection, the extension will not overwrite your existing data but rather merge the RevenueCat data into your existing firestore documents.
       Leave empty if you do not want the extension to store RevenueCat customer details.
 
+      It supports placeholders for app_user_id, for example:
+      /users/{app_user_id}/purchaser-info
+      Will save the purchaser-info on a document named also "{app_user_id}" under the subcollection "purchaser-info"
+
       (You can later modify this value in Google Firestore > Extensions > Extension Configuration > Reconfigure extension)
     validationRegex: "^[^/]+(/[^/]+/[^/]+)*$"
     validationErrorMessage: Firestore collection paths must be an odd number of segments separated by slashes, e.g. "path/to/collection".
