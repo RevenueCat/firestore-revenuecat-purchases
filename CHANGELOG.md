@@ -1,3 +1,9 @@
+## Version 0.1.4
+
+- Fixes https://github.com/RevenueCat/firestore-revenuecat-purchases/issues/33
+- Implements subcollections https://github.com/RevenueCat/firestore-revenuecat-purchases/issues/34. Now, the users collection
+parameter can contain a {app_user_id} wildcard to allow for subcollections inside an existing user document.
+
 ## Version 0.1.3
 
 - Reverts the changes made in 0.1.2 for safety, as that introduced a regression for users that would
@@ -5,7 +11,8 @@ have existing user collections. This is a temporary measure before adding a more
 
 ## Version 0.1.2
 
-- Fixes: https://github.com/RevenueCat/firestore-revenuecat-purchases/issues/33
+- Attempts to Fix: https://github.com/RevenueCat/firestore-revenuecat-purchases/issues/33 but introduces a regression
+that overwrites existing data.
 ## Version 0.1.1
 
 - Updated billing copy in PREINSTALL.md.
