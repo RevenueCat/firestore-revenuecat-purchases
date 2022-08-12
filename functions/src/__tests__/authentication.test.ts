@@ -35,7 +35,7 @@ describe("authentication", () => {
         const mockedRequest = getMockedRequest(createJWT(60, payload, "invalid_secret")) as any;
 
         api.handler(mockedRequest, mockedResponse);
-    });    
+    });
 
     it("should not authenticate with an invalid payload", (done) => {
         const mockedResponse = getMockedResponse(expect, () => done())(401, EXPECTED_AUTH_ERROR) as any;
