@@ -103,7 +103,7 @@ params:
       Leave empty if you do not want the extension to store RevenueCat customer details.
 
       It supports placeholders for app_user_id, for example:
-      /users/{app_user_id}/purchaser-info
+      users/{app_user_id}/purchaser-info
       Will save the purchaser-info on a document named also "{app_user_id}" under the subcollection "purchaser-info"
 
       (You can later modify this value in Google Firestore > Extensions > Extension Configuration > Reconfigure extension)
