@@ -85,8 +85,6 @@ export const handler = functions.https.onRequest(async (request, response) => {
       await customersCollection
         .doc(userId)
         .set(payloadToWrite, { merge: true });
-
-      await customersCollection.doc(userId).update(payloadToWrite);
     }
 
     if (SET_CUSTOM_CLAIMS === "ENABLED" && userId) {
