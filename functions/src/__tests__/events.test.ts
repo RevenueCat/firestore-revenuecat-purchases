@@ -300,6 +300,71 @@ describe("events", () => {
     });
   });
 
+  it("removes record from the old customer collection on transfer event", async () => {
+    await admin
+    .firestore()
+    .collection("revenuecat_customers")
+    .doc("chairman_carranza")
+    .delete();
+
+    const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(
+      200,
+      {}
+    ) as any;
+
+    await admin
+      .firestore()
+      .collection("revenuecat_customers")
+      .doc("chairman_carranza")
+      .set({
+        email: "chairman@revenuecat.com",
+      });
+
+    const mockedSetRequest = getMockedRequest(
+      createJWT(60, validPayload, "test_secret")
+    ) as any;
+
+    api.handler(mockedSetRequest, mockedResponse);
+
+    await sleep(100);
+
+    const mockedTransferRequest = getMockedRequest(
+      createJWT(60, {...validPayload, event: {
+        ...validPayload.event,
+        type: "TRANSFER",
+        app_user_id: "jesus.sanchez",
+        transferred_from: ["chairman_carranza"],
+        transferred_to: ["jesus.sanchez"],
+      }}, "test_secret")
+    ) as any;
+
+    api.handler(mockedTransferRequest, mockedResponse);
+
+    await sleep(300);
+
+    const oldUserDoc = await admin
+      .firestore()
+      .collection("revenuecat_customers")
+      .doc("chairman_carranza")
+      .get();
+
+    expect(oldUserDoc.data()).toEqual({
+      email: "chairman@revenuecat.com",
+    });
+
+
+    const newUserDoc = await admin
+      .firestore()
+      .collection("revenuecat_customers")
+      .doc("jesus.sanchez")
+      .get();
+
+    expect(newUserDoc.data()).toEqual({
+      ...validPayload.customer_info,
+      aliases: ["jesus.sanchez"],
+    });
+  });
+
   it("does not overwrite other keys of an existing collection", async () => {
     await admin
       .firestore()
