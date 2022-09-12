@@ -1,5 +1,5 @@
 import * as functions from "firebase-functions";
-import firestoreCloud from "@google-cloud/firestore";
+import { BodyPayload, is } from "./types";
 import * as admin from "firebase-admin";
 import { validateAndGetPayload } from "./validate-and-get-payload";
 import { validateApiVersion } from "./validate-api-version";
@@ -30,51 +30,6 @@ const SET_CUSTOM_CLAIMS = process.env.SET_CUSTOM_CLAIMS as
   | "DISABLED";
 const EXTENSION_VERSION = process.env.EXTENSION_VERSION || "0.1.4";
 
-interface Entitlement {
-  expires_date: string;
-  purchase_date: string;
-  product_identifier: string;
-  grace_period_expires_date: string;
-}
-
-type EventType =
-  | "INITIAL_PURCHASE"
-  | "RENEWAL"
-  | "PRODUCT_CHANGE"
-  | "CANCELLATION"
-  | "BILLING_ISSUE"
-  | "SUBSCRIBER_ALIAS"
-  | "NON_RENEWING_PURCHASE"
-  | "UNCANCELLATION"
-  | "TRANSFER"
-  | "SUBSCRIPTION_PAUSED"
-  | "EXPIRATION";
-
-type Event =
-  | {
-      type: Exclude<EventType, "TRANSFER">;
-      id: string;
-      app_user_id: string;
-      subscriber_info: {};
-      aliases: string[];
-    }
-  | {
-      type: "TRANSFER";
-      id: string;
-      store: string;
-      transferred_from: string[];
-      transferred_to: string[];
-    };
-
-interface BodyPayload {
-  api_version: string;
-  event: Event;
-  customer_info: {
-    original_app_user_id: string;
-    entitlements: { [entitlementIdentifier: string]: Entitlement };
-  };
-}
-
 const getCustomersCollection = (
   firestore: admin.firestore.Firestore,
   customersCollectionConfig: string,
@@ -90,7 +45,7 @@ const writeToCollection = async (
   customersCollectionConfig: string,
   userId: string,
   customerPayload: BodyPayload["customer_info"],
-  eventPayload: BodyPayload["event"],
+  aliases: string[]
 ) => {
   const customersCollection = getCustomersCollection(
     firestore,
@@ -100,7 +55,7 @@ const writeToCollection = async (
 
   const payloadToWrite = {
     ...customerPayload,
-    aliases: eventPayload.type !== "TRANSFER" ? eventPayload.aliases : eventPayload.transferred_to,
+    aliases
   };
 
   await customersCollection.doc(userId).set(payloadToWrite, { merge: true });
@@ -137,13 +92,7 @@ export const handler = functions.https.onRequest(async (request, response) => {
 
     const eventPayload = bodyPayload.event;
     const customerPayload = bodyPayload.customer_info;
-    const destinationUserIds =
-      eventPayload.type === "TRANSFER"
-        ? eventPayload.transferred_to
-        : [eventPayload.app_user_id];
-
-    const originUserIds =
-      eventPayload.type === "TRANSFER" ? eventPayload.transferred_from : null;
+    const destinationUserId = eventPayload.app_user_id;
 
     const eventType = (eventPayload.type || "").toLowerCase();
 
@@ -153,43 +102,30 @@ export const handler = functions.https.onRequest(async (request, response) => {
     }
 
     if (CUSTOMERS_COLLECTION) {
-      if (destinationUserIds) {
-        destinationUserIds.forEach(async (userId) => {
-          await writeToCollection(
-            firestore,
-            CUSTOMERS_COLLECTION,
-            userId,
-            customerPayload,
-            eventPayload
-          );
-        });
+      if (destinationUserId) {
+        await writeToCollection(
+          firestore,
+          CUSTOMERS_COLLECTION,
+          destinationUserId,
+          customerPayload,
+          eventPayload.type !== "TRANSFER"
+            ? eventPayload.aliases
+            : eventPayload.transferred_to,
+        );
       }
 
-      if (originUserIds) {
-        originUserIds.forEach(async (userId) => {
-          const doc = getCustomersCollection(
-            firestore,
-            CUSTOMERS_COLLECTION,
-            userId
-          ).doc(userId);
-
-          const deletePayload = [
-            ...Object.keys(customerPayload),
-            "aliases",
-          ].reduce(
-            (acc, key) => ({
-              ...acc,
-              [key]: firestoreCloud.FieldValue.delete(),
-            }),
-            {}
-          );
-
-          await doc.update(deletePayload);
-        });
+      if (is(bodyPayload, "TRANSFER")) {
+        await writeToCollection(
+          firestore,
+          CUSTOMERS_COLLECTION,
+          bodyPayload.event.origin_app_user_id,
+          bodyPayload.origin_customer_info,
+          bodyPayload.event.transferred_from
+        );
       }
     }
 
-    if (SET_CUSTOM_CLAIMS === "ENABLED" && destinationUserIds) {
+    if (SET_CUSTOM_CLAIMS === "ENABLED" && destinationUserId) {
       const activeEntitlements = Object.keys(
         customerPayload.entitlements
       ).filter((entitlementID) => {
@@ -198,14 +134,10 @@ export const handler = functions.https.onRequest(async (request, response) => {
         return expiresDate === null || moment.utc(expiresDate) >= moment.utc();
       });
 
-      destinationUserIds.forEach(async (userId) => {
-        await setCustomClaims(auth, userId, activeEntitlements);
-      });
+      await setCustomClaims(auth, destinationUserId, activeEntitlements);
 
-      if (originUserIds) {
-        originUserIds.forEach(async (originUserId) => {
-          await setCustomClaims(auth, originUserId, []);
-        });
+      if (is(bodyPayload, "TRANSFER")) {
+        await setCustomClaims(auth, bodyPayload.event.origin_app_user_id, []);
       }
     }
 

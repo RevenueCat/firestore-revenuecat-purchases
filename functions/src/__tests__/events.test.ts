@@ -16,6 +16,14 @@ describe("events", () => {
     global.firebaseTest.cleanup();
   });
 
+  beforeEach(async () => {
+    await admin
+      .firestore()
+      .collection("revenuecat_customers")
+      .doc("chairman_carranza")
+      .delete();
+  });
+
   const validPayload = {
     api_version: "0.0.2",
     event: {
@@ -156,12 +164,6 @@ describe("events", () => {
   });
 
   it("saves the customer_info in the customer collection", async () => {
-    await admin
-      .firestore()
-      .collection("revenuecat_customers")
-      .doc("chairman_carranza")
-      .delete();
-
     const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(
       200,
       {}
@@ -220,12 +222,6 @@ describe("events", () => {
   });
 
   it("removes entitlements/subscriptions from the customer collection", async () => {
-    await admin
-      .firestore()
-      .collection("revenuecat_customers")
-      .doc("chairman_carranza")
-      .delete();
-
     const initialPayload = {
       ...validPayload,
       customer_info: {
@@ -294,19 +290,14 @@ describe("events", () => {
       .collection("revenuecat_customers")
       .doc("chairman_carranza")
       .get();
+
     expect(updatedDoc.data()).toEqual({
       ...validPayload.customer_info,
       aliases: ["miguelcarranza", "chairman_carranza"],
     });
   });
 
-  it("removes record from the old customer collection on transfer event", async () => {
-    await admin
-    .firestore()
-    .collection("revenuecat_customers")
-    .doc("chairman_carranza")
-    .delete();
-
+  it("updates the old record on a transfer event properly ", async () => {
     const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(
       200,
       {}
@@ -315,9 +306,9 @@ describe("events", () => {
     await admin
       .firestore()
       .collection("revenuecat_customers")
-      .doc("chairman_carranza")
+      .doc("jesus.sanchez")
       .set({
-        email: "chairman@revenuecat.com",
+        email: "znk@revenuecat.com",
       });
 
     const mockedSetRequest = getMockedRequest(
@@ -328,14 +319,46 @@ describe("events", () => {
 
     await sleep(100);
 
+    const originCustomerInfo = {
+      original_app_user_id: "chairman_carranza_original",
+      first_seen: "2022-01-01 15:03",
+      subscriptions: {
+        anotherUnrelatedSubscription: {
+          purchase_date: moment.utc().subtract("days", 32).format(),
+          expires_date: null,
+          period_type: "normal",
+          original_purchase_date: moment.utc().subtract("days", 32).format(),
+          store: "stripe",
+          is_sandbox: false,
+          unsubscribe_detected_at: null,
+          billing_issues_detected_at: null,
+          grace_period_expires_date: null,
+          ownership_type: "PURCHASED",
+        },
+      },
+      entitlements: {
+        lifetime: {
+          expires_date: null,
+        },
+      },
+    };
+
     const mockedTransferRequest = getMockedRequest(
-      createJWT(60, {...validPayload, event: {
-        ...validPayload.event,
-        type: "TRANSFER",
-        app_user_id: "jesus.sanchez",
-        transferred_from: ["chairman_carranza"],
-        transferred_to: ["jesus.sanchez"],
-      }}, "test_secret")
+      createJWT(
+        60,
+        {
+          ...validPayload,
+          event: {
+            ...validPayload.event,
+            type: "TRANSFER",
+            origin_app_user_id: "jesus.sanchez",
+            transferred_from: ["jesus.sanchez", "znk"],
+            transferred_to: validPayload.event.aliases,
+          },
+          origin_customer_info: originCustomerInfo,
+        },
+        "test_secret"
+      )
     ) as any;
 
     api.handler(mockedTransferRequest, mockedResponse);
@@ -345,33 +368,28 @@ describe("events", () => {
     const oldUserDoc = await admin
       .firestore()
       .collection("revenuecat_customers")
-      .doc("chairman_carranza")
+      .doc("jesus.sanchez")
       .get();
 
     expect(oldUserDoc.data()).toEqual({
-      email: "chairman@revenuecat.com",
+      email: "znk@revenuecat.com",
+      aliases: ["jesus.sanchez", "znk"],
+      ...originCustomerInfo,
     });
-
 
     const newUserDoc = await admin
       .firestore()
       .collection("revenuecat_customers")
-      .doc("jesus.sanchez")
+      .doc(validPayload.event.app_user_id)
       .get();
 
     expect(newUserDoc.data()).toEqual({
       ...validPayload.customer_info,
-      aliases: ["jesus.sanchez"],
+      aliases: validPayload.event.aliases,
     });
   });
 
   it("does not overwrite other keys of an existing collection", async () => {
-    await admin
-      .firestore()
-      .collection("revenuecat_customers")
-      .doc("chairman_carranza")
-      .delete();
-
     await admin
       .firestore()
       .collection("revenuecat_customers")
@@ -407,12 +425,6 @@ describe("events", () => {
   });
 
   it("handles ID placeholders in customer collection parameter", async () => {
-    await admin
-      .firestore()
-      .collection("revenuecat_customers")
-      .doc("chairman_carranza")
-      .delete();
-
     jest.resetModules();
     const originalProcessEnv = process.env;
     process.env = {
