@@ -1,5 +1,5 @@
 import * as functions from "firebase-functions";
-import { BodyPayload, is } from "./types";
+import { BodyPayload, CustomerInfo, is } from "./types";
 import * as admin from "firebase-admin";
 import { validateAndGetPayload } from "./validate-and-get-payload";
 import { validateApiVersion } from "./validate-api-version";
@@ -60,6 +60,14 @@ const writeToCollection = async (
 
   await customersCollection.doc(userId).set(payloadToWrite, { merge: true });
   await customersCollection.doc(userId).update(payloadToWrite);
+};
+
+const getActiveEntitlements = (customerPayload: CustomerInfo): string[] => {
+  return Object.keys(customerPayload.entitlements).filter((entitlementID) => {
+    const expiresDate =
+      customerPayload.entitlements[entitlementID].expires_date;
+    return expiresDate === null || moment.utc(expiresDate) >= moment.utc();
+  });
 };
 
 const setCustomClaims = async (
@@ -124,18 +132,19 @@ export const handler = functions.https.onRequest(async (request, response) => {
     }
 
     if (SET_CUSTOM_CLAIMS === "ENABLED" && destinationUserId) {
-      const activeEntitlements = Object.keys(
-        customerPayload.entitlements
-      ).filter((entitlementID) => {
-        const expiresDate =
-          customerPayload.entitlements[entitlementID].expires_date;
-        return expiresDate === null || moment.utc(expiresDate) >= moment.utc();
-      });
+      const activeEntitlements = getActiveEntitlements(customerPayload);
 
       await setCustomClaims(auth, destinationUserId, activeEntitlements);
 
       if (is(bodyPayload, "TRANSFER")) {
-        await setCustomClaims(auth, bodyPayload.event.origin_app_user_id, []);
+        const originActiveEntitlements = getActiveEntitlements(
+          bodyPayload.origin_customer_info
+        );
+        await setCustomClaims(
+          auth,
+          bodyPayload.event.origin_app_user_id,
+          originActiveEntitlements
+        );
       }
     }
 

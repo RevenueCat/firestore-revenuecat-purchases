@@ -18,7 +18,7 @@ interface Entitlement {
   grace_period_expires_date: string;
 }
 
-interface CustomerInfo {
+export interface CustomerInfo {
   original_app_user_id: string;
   entitlements: { [entitlementIdentifier: string]: Entitlement };
 }
