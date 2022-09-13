@@ -57,6 +57,7 @@ export type BodyPayload =
         store: string;
         transferred_from: string[];
         transferred_to: string[];
+        aliases: string[];
         app_user_id: string;
         origin_app_user_id: string;
       };

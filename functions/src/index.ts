@@ -55,7 +55,7 @@ const writeToCollection = async (
 
   const payloadToWrite = {
     ...customerPayload,
-    aliases
+    aliases,
   };
 
   await customersCollection.doc(userId).set(payloadToWrite, { merge: true });
@@ -108,9 +108,7 @@ export const handler = functions.https.onRequest(async (request, response) => {
           CUSTOMERS_COLLECTION,
           destinationUserId,
           customerPayload,
-          eventPayload.type !== "TRANSFER"
-            ? eventPayload.aliases
-            : eventPayload.transferred_to,
+          eventPayload.aliases
         );
       }
 
