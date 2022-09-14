@@ -1,4 +1,5 @@
 import * as functions from "firebase-functions";
+import { BodyPayload, CustomerInfo, is } from "./types";
 import * as admin from "firebase-admin";
 import { validateAndGetPayload } from "./validate-and-get-payload";
 import { validateApiVersion } from "./validate-api-version";
@@ -7,6 +8,7 @@ import moment from "moment";
 import { logMessage } from "./log-message";
 
 import { getEventarc } from "firebase-admin/eventarc";
+import { Auth } from "firebase-admin/lib/auth/auth";
 
 admin.initializeApp();
 
@@ -28,27 +30,79 @@ const SET_CUSTOM_CLAIMS = process.env.SET_CUSTOM_CLAIMS as
   | "DISABLED";
 const EXTENSION_VERSION = process.env.EXTENSION_VERSION || "0.1.4";
 
-interface Entitlement {
-  expires_date: string;
-  purchase_date: string;
-  product_identifier: string;
-  grace_period_expires_date: string;
-}
+const getCustomersCollection = ({
+  firestore,
+  customersCollectionConfig,
+  userId,
+}: {
+  firestore: admin.firestore.Firestore;
+  customersCollectionConfig: string;
+  userId: string;
+}) => {
+  return firestore.collection(
+    customersCollectionConfig.replace("{app_user_id}", userId)
+  );
+};
 
-interface BodyPayload {
-  api_version: string;
-  event: {
-    id: string;
-    app_user_id: string;
-    subscriber_info: {};
-    aliases: string[];
-    type: string;
+const writeToCollection = async ({
+  firestore,
+  customersCollectionConfig,
+  userId,
+  customerPayload,
+  aliases,
+}: {
+  firestore: admin.firestore.Firestore;
+  customersCollectionConfig: string;
+  userId: string;
+  customerPayload: BodyPayload["customer_info"];
+  aliases: string[];
+}) => {
+  const customersCollection = getCustomersCollection({
+    firestore,
+    customersCollectionConfig,
+    userId,
+  });
+
+  const payloadToWrite = {
+    ...customerPayload,
+    aliases,
   };
-  customer_info: {
-    original_app_user_id: string;
-    entitlements: { [entitlementIdentifier: string]: Entitlement };
-  };
-}
+
+  await customersCollection.doc(userId).set(payloadToWrite, { merge: true });
+  await customersCollection.doc(userId).update(payloadToWrite);
+};
+
+const getActiveEntitlements = ({
+  customerPayload,
+}: {
+  customerPayload: CustomerInfo;
+}): string[] => {
+  return Object.keys(customerPayload.entitlements).filter((entitlementID) => {
+    const expiresDate =
+      customerPayload.entitlements[entitlementID].expires_date;
+    return expiresDate === null || moment.utc(expiresDate) >= moment.utc();
+  });
+};
+
+const setCustomClaims = async ({
+  auth,
+  userId,
+  entitlements,
+}: {
+  auth: Auth;
+  userId: string;
+  entitlements: string[];
+}) => {
+  try {
+    const { customClaims } = await auth.getUser(userId);
+    await admin.auth().setCustomUserClaims(userId, {
+      ...(customClaims ? customClaims : {}),
+      revenueCatEntitlements: entitlements,
+    });
+  } catch (userError) {
+    logMessage(`Error saving user ${userId}: ${userError}`, "error");
+  }
+};
 
 export const handler = functions.https.onRequest(async (request, response) => {
   try {
@@ -64,7 +118,8 @@ export const handler = functions.https.onRequest(async (request, response) => {
 
     const eventPayload = bodyPayload.event;
     const customerPayload = bodyPayload.customer_info;
-    const userId = eventPayload.app_user_id;
+    const destinationUserId = eventPayload.app_user_id;
+
     const eventType = (eventPayload.type || "").toLowerCase();
 
     if (EVENTS_COLLECTION) {
@@ -72,40 +127,46 @@ export const handler = functions.https.onRequest(async (request, response) => {
       await eventsCollection.doc(eventPayload.id).set(eventPayload);
     }
 
-    if (CUSTOMERS_COLLECTION && userId) {
-      const customersCollection = firestore.collection(
-        CUSTOMERS_COLLECTION.replace("{app_user_id}", userId)
-      );
+    if (CUSTOMERS_COLLECTION) {
+      if (destinationUserId) {
+        await writeToCollection({
+          firestore,
+          customersCollectionConfig: CUSTOMERS_COLLECTION,
+          userId: destinationUserId,
+          customerPayload,
+          aliases: eventPayload.aliases,
+        });
+      }
 
-      const payloadToWrite = {
-        ...customerPayload,
-        aliases: eventPayload.aliases,
-      };
-
-      await customersCollection
-        .doc(userId)
-        .set(payloadToWrite, { merge: true });
-
-      await customersCollection.doc(userId).update(payloadToWrite);
+      if (is(bodyPayload, "TRANSFER")) {
+        await writeToCollection({
+          firestore,
+          customersCollectionConfig: CUSTOMERS_COLLECTION,
+          userId: bodyPayload.event.origin_app_user_id,
+          customerPayload: bodyPayload.origin_customer_info,
+          aliases: bodyPayload.event.transferred_from,
+        });
+      }
     }
 
-    if (SET_CUSTOM_CLAIMS === "ENABLED" && userId) {
-      const activeEntitlements = Object.keys(
-        customerPayload.entitlements
-      ).filter((entitlementID) => {
-        const expiresDate =
-          customerPayload.entitlements[entitlementID].expires_date;
-        return expiresDate === null || moment.utc(expiresDate) >= moment.utc();
+    if (SET_CUSTOM_CLAIMS === "ENABLED" && destinationUserId) {
+      const activeEntitlements = getActiveEntitlements({ customerPayload });
+
+      await setCustomClaims({
+        auth,
+        userId: destinationUserId,
+        entitlements: activeEntitlements,
       });
 
-      try {
-        const { customClaims } = await auth.getUser(userId);
-        await admin.auth().setCustomUserClaims(userId, {
-          ...(customClaims ? customClaims : {}),
-          revenueCatEntitlements: activeEntitlements,
+      if (is(bodyPayload, "TRANSFER")) {
+        const originActiveEntitlements = getActiveEntitlements({
+          customerPayload: bodyPayload.origin_customer_info,
         });
-      } catch (userError) {
-        logMessage(`Error saving user ${userId}: ${userError}`, "error");
+        await setCustomClaims({
+          auth,
+          userId: bodyPayload.event.origin_app_user_id,
+          entitlements: originActiveEntitlements,
+        });
       }
     }
 
