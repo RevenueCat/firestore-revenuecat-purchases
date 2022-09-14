@@ -30,28 +30,38 @@ const SET_CUSTOM_CLAIMS = process.env.SET_CUSTOM_CLAIMS as
   | "DISABLED";
 const EXTENSION_VERSION = process.env.EXTENSION_VERSION || "0.1.4";
 
-const getCustomersCollection = (
-  firestore: admin.firestore.Firestore,
-  customersCollectionConfig: string,
-  userId: string
-) => {
+const getCustomersCollection = ({
+  firestore,
+  customersCollectionConfig,
+  userId,
+}: {
+  firestore: admin.firestore.Firestore;
+  customersCollectionConfig: string;
+  userId: string;
+}) => {
   return firestore.collection(
     customersCollectionConfig.replace("{app_user_id}", userId)
   );
 };
 
-const writeToCollection = async (
-  firestore: admin.firestore.Firestore,
-  customersCollectionConfig: string,
-  userId: string,
-  customerPayload: BodyPayload["customer_info"],
-  aliases: string[]
-) => {
-  const customersCollection = getCustomersCollection(
+const writeToCollection = async ({
+  firestore,
+  customersCollectionConfig,
+  userId,
+  customerPayload,
+  aliases,
+}: {
+  firestore: admin.firestore.Firestore;
+  customersCollectionConfig: string;
+  userId: string;
+  customerPayload: BodyPayload["customer_info"];
+  aliases: string[];
+}) => {
+  const customersCollection = getCustomersCollection({
     firestore,
     customersCollectionConfig,
-    userId
-  );
+    userId,
+  });
 
   const payloadToWrite = {
     ...customerPayload,
@@ -62,7 +72,11 @@ const writeToCollection = async (
   await customersCollection.doc(userId).update(payloadToWrite);
 };
 
-const getActiveEntitlements = (customerPayload: CustomerInfo): string[] => {
+const getActiveEntitlements = ({
+  customerPayload,
+}: {
+  customerPayload: CustomerInfo;
+}): string[] => {
   return Object.keys(customerPayload.entitlements).filter((entitlementID) => {
     const expiresDate =
       customerPayload.entitlements[entitlementID].expires_date;
@@ -70,11 +84,15 @@ const getActiveEntitlements = (customerPayload: CustomerInfo): string[] => {
   });
 };
 
-const setCustomClaims = async (
-  auth: Auth,
-  userId: string,
-  entitlements: string[]
-) => {
+const setCustomClaims = async ({
+  auth,
+  userId,
+  entitlements,
+}: {
+  auth: Auth;
+  userId: string;
+  entitlements: string[];
+}) => {
   try {
     const { customClaims } = await auth.getUser(userId);
     await admin.auth().setCustomUserClaims(userId, {
@@ -111,40 +129,44 @@ export const handler = functions.https.onRequest(async (request, response) => {
 
     if (CUSTOMERS_COLLECTION) {
       if (destinationUserId) {
-        await writeToCollection(
+        await writeToCollection({
           firestore,
-          CUSTOMERS_COLLECTION,
-          destinationUserId,
+          customersCollectionConfig: CUSTOMERS_COLLECTION,
+          userId: destinationUserId,
           customerPayload,
-          eventPayload.aliases
-        );
+          aliases: eventPayload.aliases,
+        });
       }
 
       if (is(bodyPayload, "TRANSFER")) {
-        await writeToCollection(
+        await writeToCollection({
           firestore,
-          CUSTOMERS_COLLECTION,
-          bodyPayload.event.origin_app_user_id,
-          bodyPayload.origin_customer_info,
-          bodyPayload.event.transferred_from
-        );
+          customersCollectionConfig: CUSTOMERS_COLLECTION,
+          userId: bodyPayload.event.origin_app_user_id,
+          customerPayload: bodyPayload.origin_customer_info,
+          aliases: bodyPayload.event.transferred_from,
+        });
       }
     }
 
     if (SET_CUSTOM_CLAIMS === "ENABLED" && destinationUserId) {
-      const activeEntitlements = getActiveEntitlements(customerPayload);
+      const activeEntitlements = getActiveEntitlements({ customerPayload });
 
-      await setCustomClaims(auth, destinationUserId, activeEntitlements);
+      await setCustomClaims({
+        auth,
+        userId: destinationUserId,
+        entitlements: activeEntitlements,
+      });
 
       if (is(bodyPayload, "TRANSFER")) {
-        const originActiveEntitlements = getActiveEntitlements(
-          bodyPayload.origin_customer_info
-        );
-        await setCustomClaims(
+        const originActiveEntitlements = getActiveEntitlements({
+          customerPayload: bodyPayload.origin_customer_info,
+        });
+        await setCustomClaims({
           auth,
-          bodyPayload.event.origin_app_user_id,
-          originActiveEntitlements
-        );
+          userId: bodyPayload.event.origin_app_user_id,
+          entitlements: originActiveEntitlements,
+        });
       }
     }
 
