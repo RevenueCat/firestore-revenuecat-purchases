@@ -1,3 +1,7 @@
+## Version 0.1.5
+
+- Fixes https://github.com/RevenueCat/firestore-revenuecat-purchases/issues/36
+
 ## Version 0.1.4
 
 - Fixes https://github.com/RevenueCat/firestore-revenuecat-purchases/issues/33
