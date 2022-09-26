@@ -1,3 +1,7 @@
+## Version 0.1.6
+
+- Fixes a typo in non_renewing_purchase event that prevented publishing to Eventarc. https://github.com/RevenueCat/firestore-revenuecat-purchases/pull/42. Thanks @SDrinkWater!
+
 ## Version 0.1.5
 
 - Fixes https://github.com/RevenueCat/firestore-revenuecat-purchases/issues/36
