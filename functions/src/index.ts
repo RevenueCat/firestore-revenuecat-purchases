@@ -28,7 +28,7 @@ const CUSTOMERS_COLLECTION = process.env.REVENUECAT_CUSTOMERS_COLLECTION as
 const SET_CUSTOM_CLAIMS = process.env.SET_CUSTOM_CLAIMS as
   | "ENABLED"
   | "DISABLED";
-const EXTENSION_VERSION = process.env.EXTENSION_VERSION || "0.1.6";
+const EXTENSION_VERSION = process.env.EXTENSION_VERSION || "0.1.7";
 
 const getCustomersCollection = ({
   firestore,
@@ -177,6 +177,6 @@ export const handler = functions.https.onRequest(async (request, response) => {
 
     response.send({});
   } catch (err) {
-    requestErrorHandler(err as Error, response);
+    requestErrorHandler(err as Error, response, EXTENSION_VERSION);
   }
 });
