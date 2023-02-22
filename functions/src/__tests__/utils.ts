@@ -3,7 +3,8 @@ import nJwt, { JSONMap } from "njwt";
 // TODO: add docs
 export const EXPECTED_AUTH_ERROR = JSON.stringify({
     code:1,
-    message: "Incoming RevenueCat webhook could not be authenticated. Please check that the shared secret is set up correctly."
+    message: "Incoming RevenueCat webhook could not be authenticated. Please check that the shared secret is set up correctly.",
+    extension_version: "0.0.2"
 });
 
 export const createJWT = (expirationSeconds: number, payload: JSONMap, secretKey: string) => {
@@ -21,7 +22,7 @@ export const createJWT = (expirationSeconds: number, payload: JSONMap, secretKey
 type OnSend = (payload: Object) => void;
 type MockedResponseCallable = (expectedStatusCode: number, expectedResponse: Object) => any;
 
-export function getMockedResponse(expect: any, onSend: OnSend): MockedResponseCallable { 
+export function getMockedResponse(expect: any, onSend: OnSend): MockedResponseCallable {
     return (expectedStatusCode, expectedResponse) => ({
         header: function(headerKey: string, headerValue: string) {
             if (!this.headers) {
@@ -33,7 +34,7 @@ export function getMockedResponse(expect: any, onSend: OnSend): MockedResponseCa
         getHeaders: function() {
             return this.headers;
         },
-        status: function (code: number) { 
+        status: function (code: number) {
             expect(code).toBe(expectedStatusCode);
             // @ts-ignore
             this.statusCode = code;

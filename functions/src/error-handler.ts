@@ -4,12 +4,14 @@ import { logger, Response } from "firebase-functions";
 interface ErrorPayload {
     code: number,
     message: string
+    extension_version?: string
 }
 
-const constructResponsePayload = (exception: ExtensionError): ErrorPayload => {
+const constructResponsePayload = (exception: ExtensionError, extensionVersion?: string): ErrorPayload => {
     return {
         code: exception.code(),
-        message: exception.message
+        message: exception.message,
+        extension_version: extensionVersion,
     }
 }
 
@@ -19,7 +21,7 @@ const sendErrorResponse = async (httpStatus: number, response: Response, payload
     ));
 }
 
-export const requestErrorHandler = (exception: Error, response: Response) => {
+export const requestErrorHandler = (exception: Error, response: Response, extensionVersion?: string) => {
     let responsePayload;
     let extensionException: ExtensionError;
 
@@ -31,7 +33,7 @@ export const requestErrorHandler = (exception: Error, response: Response) => {
         extensionException = new UnknownError();
     }
 
-    responsePayload = constructResponsePayload(extensionException)
+    responsePayload = constructResponsePayload(extensionException, extensionVersion)
 
     return sendErrorResponse(extensionException.httpStatusCode(), response, responsePayload);
 };
