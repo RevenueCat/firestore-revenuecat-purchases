@@ -1,5 +1,5 @@
 name: firestore-revenuecat-purchases
-version: 0.1.8
+version: 0.1.9
 specVersion: v1beta # Firebase Extensions specification version (do not edit)
 
 displayName: Enable In-App Purchases with RevenueCat

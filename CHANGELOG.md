@@ -1,3 +1,7 @@
+## Version 0.1.9
+
+- Extension to 0.1.8, upgrades also transitive dependencies
+
 ## Version 0.1.8
 
 - Upgrades jest and typescript to address a vulnerability in JSON5 (https://github.com/RevenueCat/firestore-revenuecat-purchases/pull/55).
