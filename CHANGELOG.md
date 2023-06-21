@@ -1,3 +1,7 @@
+## Version 0.1.10
+
+- Upgrade firebase-admin to the latest version: https://github.com/RevenueCat/firestore-revenuecat-purchases/pull/58
+
 ## Version 0.1.9
 
 - Extension to 0.1.8, upgrades also transitive dependencies
