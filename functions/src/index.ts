@@ -1,11 +1,11 @@
-import * as functions from "firebase-functions";
-import { BodyPayload, CustomerInfo, is } from "./types";
 import * as admin from "firebase-admin";
+import * as functions from "firebase-functions";
+import moment from "moment";
+import { requestErrorHandler } from "./error-handler";
+import { logMessage } from "./log-message";
+import { BodyPayload, CustomerInfo, is } from "./types";
 import { validateAndGetPayload } from "./validate-and-get-payload";
 import { validateApiVersion } from "./validate-api-version";
-import { requestErrorHandler } from "./error-handler";
-import moment from "moment";
-import { logMessage } from "./log-message";
 
 import { getEventarc } from "firebase-admin/eventarc";
 import { Auth } from "firebase-admin/lib/auth/auth";
@@ -28,7 +28,7 @@ const CUSTOMERS_COLLECTION = process.env.REVENUECAT_CUSTOMERS_COLLECTION as
 const SET_CUSTOM_CLAIMS = process.env.SET_CUSTOM_CLAIMS as
   | "ENABLED"
   | "DISABLED";
-const EXTENSION_VERSION = process.env.EXTENSION_VERSION || "0.1.10";
+const EXTENSION_VERSION = process.env.EXTENSION_VERSION || "0.1.11";
 
 const getCustomersCollection = ({
   firestore,

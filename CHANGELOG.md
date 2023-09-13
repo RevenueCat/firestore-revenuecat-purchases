@@ -1,3 +1,7 @@
+## Version 0.1.11
+
+- Upgraded protobufjs to address a security vulnerability https://github.com/RevenueCat/firestore-revenuecat-purchases/pull/62/files
+
 ## Version 0.1.10
 
 - Upgrade firebase-admin to the latest version: https://github.com/RevenueCat/firestore-revenuecat-purchases/pull/58
