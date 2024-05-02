@@ -41,8 +41,5 @@
     "ts-jest": "^29.1.1",
     "ts-node": "^10.9.1"
   },
-  "resolutions": {
-    "json5": "2.2.3"
-  },
   "private": true
 }
