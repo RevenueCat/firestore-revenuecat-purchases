@@ -1,3 +1,7 @@
+## Version 0.1.13
+
+- Upgraded firebase-functions to ^4.9.0 to address CVE-2024-28176
+
 ## Version 0.1.12
 
 - Upgraded Node.js from version 14 to version 18 https://github.com/RevenueCat/firestore-revenuecat-purchases/pull/66/files
