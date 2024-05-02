@@ -6,7 +6,7 @@
     "lint": "eslint --ext .js,.ts .",
     "test": "jest --watchAll=false --verbose=false",
     "signer": "ts-node development/signer-server.ts",
-    "test:emulator": "firebase emulators:exec --project=sample 'npm run test'",
+    "test:emulator": "cd ../ && firebase emulators:exec --project=revenuecat-1567550268644 'cd functions/ && npm run test'",
     "build": "tsc",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
