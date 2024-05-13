@@ -1,3 +1,7 @@
+## Version 0.1.14
+
+- Upgraded several dependencies to address CVE-2023-36665
+
 ## Version 0.1.13
 
 - Upgraded firebase-functions to ^4.9.0 to address CVE-2024-28176
