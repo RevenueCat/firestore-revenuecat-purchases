@@ -9,6 +9,7 @@ type EventType =
   | "UNCANCELLATION"
   | "TRANSFER"
   | "SUBSCRIPTION_PAUSED"
+  | "SUBSCRIPTION_EXTENDED"
   | "EXPIRATION";
 
 interface Entitlement {
