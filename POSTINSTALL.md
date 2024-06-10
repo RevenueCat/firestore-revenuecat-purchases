@@ -11,7 +11,7 @@ service cloud.firestore {
     }
 
     match /${param:REVENUECAT_EVENTS_COLLECTION}/{id} {
-      allow read: if request.auth.uid == resource.app_user_id
+      allow read: if request.auth.uid == resource.data.app_user_id
     }
   }
 }
