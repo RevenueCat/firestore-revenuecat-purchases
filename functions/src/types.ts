@@ -1,3 +1,5 @@
+import {firestore} from "firebase-admin";
+
 type EventType =
   | "INITIAL_PURCHASE"
   | "RENEWAL"
@@ -12,10 +14,10 @@ type EventType =
   | "EXPIRATION";
 
 interface Entitlement {
-  expires_date: string;
-  purchase_date: string;
+  expires_date: firestore.Timestamp;
+  purchase_date: firestore.Timestamp;
   product_identifier: string;
-  grace_period_expires_date: string;
+  grace_period_expires_date: firestore.Timestamp;
 }
 
 export interface CustomerInfo {
