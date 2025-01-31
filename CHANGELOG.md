@@ -1,3 +1,7 @@
+## Version 0.1.15
+
+- Regenerate lock file to address extension deployment issues
+
 ## Version 0.1.14
 
 - Upgraded several dependencies to address CVE-2023-36665
