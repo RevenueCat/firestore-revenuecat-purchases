@@ -1,3 +1,7 @@
+## Version 0.1.16
+
+- Upgraded Node.js from version 18 to version 20 https://github.com/RevenueCat/firestore-revenuecat-purchases/pull/98/files
+
 ## Version 0.1.15
 
 - Regenerate lock file to address extension deployment issues
