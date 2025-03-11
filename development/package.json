@@ -11,6 +11,6 @@
   "dependencies": {
     "body-parser": "^1.19.2",
     "express": "^4.17.3",
-    "njwt": "^1.2.0"
+    "njwt": "^2.0.1"
   }
 }
