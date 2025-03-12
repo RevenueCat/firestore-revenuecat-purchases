@@ -1,3 +1,8 @@
+## Version 0.1.17
+
+- Upgrade to multiple libraries
+- Upgrading firebase-admin to the latest version to fix permissions error in the function when setting custom claims.
+
 ## Version 0.1.16
 
 - Upgraded Node.js from version 18 to version 20 https://github.com/RevenueCat/firestore-revenuecat-purchases/pull/98/files

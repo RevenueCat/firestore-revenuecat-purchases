@@ -1,5 +1,6 @@
 import { ExtensionError, InvalidApiVersionError, InvalidTokenError, UnknownError } from "./exceptions";
-import { logger, Response } from "firebase-functions";
+import { logger } from "firebase-functions";
+import { Response } from "express";
 
 interface ErrorPayload {
     code: number,
