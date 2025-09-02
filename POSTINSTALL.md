@@ -67,7 +67,7 @@ getDoc(doc(db, "${param:REVENUECAT_CUSTOMERS_COLLECTION}", getAuth().currentUser
   .then((snapshot) => {
     if (snapshot.exists()) {
       snapshot.subscriptions
-        .filter(subscription => new Date(subscription.expires_date) >= new Date())
+        .filter(subscription => subscription.expires_date.toDate() >= new Date())
         .forEach(subscription => console.log(JSON.stringify(subscription)));
     }
   });

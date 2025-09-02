@@ -67,3 +67,6 @@ node_modules/
 
 # macOS system file
 .DS_store
+
+# IDE personal folder
+.idea
