@@ -43,6 +43,29 @@
   },
   "private": true,
   "overrides": {
-    "undici-types": "7.4.0"
+    "undici-types": "7.4.0",
+    "fast-xml-parser": "5.8.0",
+    "protobufjs": "7.5.8",
+    "node-forge": "1.4.0",
+    "path-to-regexp": "0.1.13",
+    "lodash": "4.18.1",
+    "flatted": "3.4.2",
+    "fast-uri": "3.1.2",
+    "minimatch": "3.1.5",
+    "brace-expansion": "1.1.14",
+    "filelist": {
+      "minimatch": "5.1.9",
+      "brace-expansion": "2.0.3"
+    },
+    "picomatch": "4.0.4",
+    "qs": "6.15.1",
+    "@tootallnate/once": "3.0.1",
+    "@babel/helpers": "7.26.10",
+    "ajv": "6.15.0",
+    "table": {
+      "ajv": "8.20.0"
+    },
+    "diff": "4.0.4",
+    "uuid": "11.1.1"
   }
 }
