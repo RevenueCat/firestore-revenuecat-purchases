@@ -44,6 +44,28 @@ const getCustomersCollection = ({
   );
 };
 
+const isIso8601Date = (str: string): boolean => moment(str, moment.ISO_8601, true).isValid();
+
+
+const convertDatesToTimestamps = (obj: any): any => {
+  if (typeof obj === 'string' && isIso8601Date(obj)) {
+    return admin.firestore.Timestamp.fromDate(moment(obj).toDate());
+  }
+
+  if (Array.isArray(obj)) {
+    return obj.map(convertDatesToTimestamps);
+  }
+
+  if (obj !== null && typeof obj === 'object') {
+    return Object.entries(obj).reduce((acc, [key, value]) => {
+      acc[key] = convertDatesToTimestamps(value);
+      return acc;
+    }, {} as any);
+  }
+
+  return obj;
+};
+
 const writeToCollection = async ({
   firestore,
   customersCollectionConfig,
@@ -63,10 +85,11 @@ const writeToCollection = async ({
     userId,
   });
 
-  const payloadToWrite = {
+  // Recursively convert all date strings in the customerPayload to Timestamps
+  const payloadToWrite = convertDatesToTimestamps({
     ...customerPayload,
     aliases,
-  };
+  });
 
   await customersCollection.doc(userId).set(payloadToWrite, { merge: true });
   await customersCollection.doc(userId).update(payloadToWrite);
