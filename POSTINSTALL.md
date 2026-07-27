@@ -73,6 +73,15 @@ getDoc(doc(db, "${param:REVENUECAT_CUSTOMERS_COLLECTION}", getAuth().currentUser
   });
 ```
 
+#### Fields managed by the extension
+
+RevenueCat delivers webhooks at least once and does not guarantee ordering, so the extension keeps two bookkeeping fields to avoid applying the same event twice or letting an older event overwrite a newer one:
+
+- `rc_applied_at` on each event document, set once the event has been fully processed
+- `rc_last_event_timestamp_ms` on each customer document, holding the `event_timestamp_ms` of the last event applied to that customer
+
+Both are written by the extension and should be treated as read-only.
+
 #### React to subscription lifecycle events
 
 Subscription lifecycle events get stored as events in the Firestore collection `${param:REVENUECAT_EVENTS_COLLECTION}`. By listening to changes in this collection, for example, through [Cloud Firestore triggered Firebase Cloud Functions](https://firebase.google.com/docs/functions/firestore-events), you can trigger any custom behavior that you want. An example could be sending push notifications to customers with billing issues to prompt them to update their credit cards. To do that, you would:

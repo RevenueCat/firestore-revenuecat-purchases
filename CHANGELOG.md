@@ -1,3 +1,9 @@
+## Version 0.1.19
+
+- Duplicate deliveries of an event id are now ignored instead of being applied again. The extension marks an event as applied with an `rc_applied_at` field once it finishes processing it, so a delivery that failed part way through is still retried.
+- Events older than the last event applied to a customer no longer overwrite that customer's document or custom claims. The last applied `event_timestamp_ms` is tracked per customer in an `rc_last_event_timestamp_ms` field.
+- Transfer events now write the origin and destination customer documents in a single transaction.
+
 ## Version 0.1.18
 
 - Upgrade to multiple lirbaries.

@@ -40,6 +40,7 @@ export type BodyPayload =
       event: {
         type: Exclude<EventType, "TRANSFER">;
         id: string;
+        event_timestamp_ms?: number;
         app_user_id: string;
         subscriber_info: {};
         aliases: string[];
@@ -54,6 +55,7 @@ export type BodyPayload =
       event: {
         type: "TRANSFER";
         id: string;
+        event_timestamp_ms?: number;
         store: string;
         transferred_from: string[];
         transferred_to: string[];

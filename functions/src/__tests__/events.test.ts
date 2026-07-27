@@ -7,6 +7,11 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+const deleteCollection = async (path: string) => {
+  const snapshot = await admin.firestore().collection(path).get();
+  await Promise.all(snapshot.docs.map((doc) => doc.ref.delete()));
+};
+
 describe("events", () => {
   // @ts-ignore
   beforeAll(() => global.firebaseTest.cleanup());
@@ -22,6 +27,9 @@ describe("events", () => {
       .collection("revenuecat_customers")
       .doc("chairman_carranza")
       .delete();
+    // The handler skips event ids it has already applied, so tests cannot share
+    // the ids they deliver.
+    await deleteCollection("revenuecat_events");
   });
 
   const validPayload = {
@@ -121,7 +129,10 @@ describe("events", () => {
       .collection("revenuecat_events")
       .doc("uuid")
       .get();
-    expect(doc.data()).toEqual(validPayload.event);
+    expect(doc.data()).toEqual({
+      ...validPayload.event,
+      rc_applied_at: expect.anything(),
+    });
   });
 
   it("doesn't save the event if the REVENUECAT_EVENTS_COLLECTION setting is not set", async () => {
@@ -196,6 +207,7 @@ describe("events", () => {
         60,
         {
           ...validPayload,
+          event: { ...validPayload.event, id: "uuid_customer_info_update" },
           customer_info: {
             ...validPayload.customer_info,
             ...additionalCustomerInfo,
@@ -276,7 +288,10 @@ describe("events", () => {
       createJWT(
         60,
         // When promotionals are removed, neither customer_info nor subscriptions will contain them anymore
-        validPayload,
+        {
+          ...validPayload,
+          event: { ...validPayload.event, id: "uuid_promotional_removed" },
+        },
         "test_secret"
       )
     ) as any;
@@ -317,7 +332,7 @@ describe("events", () => {
 
     api.handler(mockedSetRequest, mockedResponse);
 
-    await sleep(100);
+    await sleep(500);
 
     const originCustomerInfo = {
       original_app_user_id: "chairman_carranza_original",
@@ -350,6 +365,7 @@ describe("events", () => {
           ...validPayload,
           event: {
             ...validPayload.event,
+            id: "uuid_transfer",
             type: "TRANSFER",
             origin_app_user_id: "jesus.sanchez",
             transferred_from: ["jesus.sanchez", "znk"],
@@ -618,6 +634,224 @@ describe("events", () => {
     );
 
     expect(anotherCustomClaims).toEqual(undefined);
+    process.env = originalProcessEnv;
+  });
+
+  const activeEntitlements = {
+    pro: {
+      expires_date: moment.utc().add("days", 2).format(),
+    },
+  };
+
+  const transferPayload = ({
+    id,
+    eventTimestampMs,
+    destinationUserId,
+    destinationEntitlements,
+    originUserId,
+    originEntitlements,
+  }: {
+    id: string;
+    eventTimestampMs: number;
+    destinationUserId: string;
+    destinationEntitlements: Object;
+    originUserId: string;
+    originEntitlements: Object;
+  }) => ({
+    api_version: validPayload.api_version,
+    event: {
+      id,
+      event_timestamp_ms: eventTimestampMs,
+      type: "TRANSFER",
+      app_user_id: destinationUserId,
+      aliases: [destinationUserId],
+      origin_app_user_id: originUserId,
+      transferred_from: [originUserId],
+      transferred_to: [destinationUserId],
+    },
+    customer_info: {
+      original_app_user_id: destinationUserId,
+      entitlements: destinationEntitlements,
+    },
+    origin_customer_info: {
+      original_app_user_id: originUserId,
+      entitlements: originEntitlements,
+    },
+  });
+
+  const deliver = async (payload: Object, handlerFn = api.handler) => {
+    const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(
+      200,
+      {}
+    ) as any;
+    const mockedRequest = getMockedRequest(
+      createJWT(60, payload as any, "test_secret")
+    ) as any;
+
+    handlerFn(mockedRequest, mockedResponse);
+    await sleep(500);
+  };
+
+  const customerDoc = (userId: string) =>
+    admin.firestore().collection("revenuecat_customers").doc(userId).get();
+
+  it("ignores a redelivery of an event that was already applied", async () => {
+    await deliver({
+      ...validPayload,
+      event: { ...validPayload.event, id: "redelivered_event" },
+    });
+
+    await deliver({
+      ...validPayload,
+      event: { ...validPayload.event, id: "redelivered_event" },
+      customer_info: {
+        ...validPayload.customer_info,
+        original_app_user_id: "someone_else",
+      },
+    });
+
+    const doc = await customerDoc("chairman_carranza");
+    expect(doc.get("original_app_user_id")).toEqual("miguelcarranza");
+  });
+
+  it("applies an event whose document exists but was never marked as applied", async () => {
+    await admin
+      .firestore()
+      .collection("revenuecat_events")
+      .doc("interrupted_event")
+      .set({ id: "interrupted_event" });
+
+    await deliver({
+      ...validPayload,
+      event: { ...validPayload.event, id: "interrupted_event" },
+    });
+
+    const doc = await customerDoc("chairman_carranza");
+    expect(doc.get("original_app_user_id")).toEqual("miguelcarranza");
+  });
+
+  it("does not write a watermark for events without event_timestamp_ms", async () => {
+    await deliver({
+      ...validPayload,
+      event: { ...validPayload.event, id: "no_timestamp_event" },
+    });
+
+    const doc = await customerDoc("chairman_carranza");
+    expect(doc.data()).toEqual({
+      ...validPayload.customer_info,
+      aliases: validPayload.event.aliases,
+    });
+  });
+
+  it("ignores a transfer that is older than the last event applied to the customer", async () => {
+    await Promise.all(
+      ["owner_a", "owner_b", "owner_c"].map((userId) =>
+        admin
+          .firestore()
+          .collection("revenuecat_customers")
+          .doc(userId)
+          .delete()
+      )
+    );
+
+    // B -> C is applied first and revokes B.
+    await deliver(
+      transferPayload({
+        id: "transfer_b_to_c",
+        eventTimestampMs: 2000,
+        destinationUserId: "owner_c",
+        destinationEntitlements: activeEntitlements,
+        originUserId: "owner_b",
+        originEntitlements: {},
+      })
+    );
+
+    // A -> B arrives afterwards carrying a snapshot from before the B -> C
+    // transfer, in which B still owned the entitlement.
+    await deliver(
+      transferPayload({
+        id: "transfer_a_to_b",
+        eventTimestampMs: 1000,
+        destinationUserId: "owner_b",
+        destinationEntitlements: activeEntitlements,
+        originUserId: "owner_a",
+        originEntitlements: {},
+      })
+    );
+
+    const ownerB = await customerDoc("owner_b");
+    expect(ownerB.get("entitlements")).toEqual({});
+    expect(ownerB.get("rc_last_event_timestamp_ms")).toEqual(2000);
+
+    const ownerC = await customerDoc("owner_c");
+    expect(ownerC.get("entitlements")).toEqual(activeEntitlements);
+  });
+
+  it("does not re-grant custom claims to the previous owner on a stale transfer", async () => {
+    jest.resetModules();
+    const originalProcessEnv = process.env;
+    process.env = {
+      ...originalProcessEnv,
+      SET_CUSTOM_CLAIMS: "ENABLED",
+    };
+
+    const { handler } = require("../index");
+    const auth = admin.auth();
+
+    await auth.importUsers(
+      ["claims_owner_a", "claims_owner_b", "claims_owner_c"].map(
+        (uid, index) => ({
+          uid,
+          email: `${uid}@example.com`,
+          passwordHash: Buffer.from(`passwordHash${index}`),
+          passwordSalt: Buffer.from(`salt${index}`),
+        })
+      ),
+      {
+        hash: {
+          algorithm: "HMAC_SHA256",
+          key: Buffer.from("secretKey"),
+        },
+      }
+    );
+
+    await sleep(100);
+
+    await deliver(
+      transferPayload({
+        id: "claims_transfer_b_to_c",
+        eventTimestampMs: 2000,
+        destinationUserId: "claims_owner_c",
+        destinationEntitlements: activeEntitlements,
+        originUserId: "claims_owner_b",
+        originEntitlements: {},
+      }),
+      handler
+    );
+
+    expect((await auth.getUser("claims_owner_b")).customClaims).toEqual({
+      revenueCatEntitlements: [],
+    });
+
+    await deliver(
+      transferPayload({
+        id: "claims_transfer_a_to_b",
+        eventTimestampMs: 1000,
+        destinationUserId: "claims_owner_b",
+        destinationEntitlements: activeEntitlements,
+        originUserId: "claims_owner_a",
+        originEntitlements: {},
+      }),
+      handler
+    );
+
+    expect((await auth.getUser("claims_owner_b")).customClaims).toEqual({
+      revenueCatEntitlements: [],
+    });
+    expect((await auth.getUser("claims_owner_c")).customClaims).toEqual({
+      revenueCatEntitlements: ["pro"],
+    });
+
     process.env = originalProcessEnv;
   });
 
