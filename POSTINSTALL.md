@@ -44,8 +44,17 @@ To check access to entitlements, you can either [use the RevenueCat SDK](https:/
 ```javascript
 getAuth().currentUser.getIdTokenResult()
   .then((idTokenResult) => {
-     // Confirm the user has a premium entitlement.
-     if (!!idTokenResult.claims.activeEntitlements.includes("premium")) {
+     // revenueCatEntitlementsExpiresAtMs maps each active entitlement to its
+     // expiry in epoch milliseconds, or null when it never expires. Check the
+     // entitlement you care about rather than the set as a whole, so a lapsed
+     // entitlement does not switch off the others the customer still holds.
+     const premiumExpiresAtMs =
+       idTokenResult.claims.revenueCatEntitlementsExpiresAtMs?.premium;
+     const hasPremium =
+       premiumExpiresAtMs !== undefined &&
+       (premiumExpiresAtMs === null || premiumExpiresAtMs > Date.now());
+
+     if (hasPremium) {
        // Show premium UI.
        showPremiumUI();
      } else {
@@ -57,6 +66,13 @@ getAuth().currentUser.getIdTokenResult()
     console.log(error);
   });
 ```
+
+The extension sets these claims:
+
+- `revenueCatEntitlements`, the entitlement identifiers that were active when the last event was processed
+- `revenueCatEntitlementsExpiresAtMs`, a map from each of those entitlement identifiers to its expiry in epoch milliseconds, or `null` when that entitlement never expires
+
+**Custom claims are a cache, not a source of truth.** They are only rewritten when RevenueCat sends an event, so they do not expire on their own: once a subscription lapses, the claim keeps listing that entitlement until another event for that customer arrives. Firebase ID tokens are also valid for up to an hour after claims change. Use each entitlement's own expiry in `revenueCatEntitlementsExpiresAtMs` to decide whether it can still be trusted, and check the customer document or the RevenueCat API when a decision has to be exact.
 
 #### List a user's active subscriptions
 

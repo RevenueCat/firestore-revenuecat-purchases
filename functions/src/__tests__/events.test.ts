@@ -675,6 +675,13 @@ describe("events", () => {
 
     expect(customClaims).toEqual({
       revenueCatEntitlements: ["pro", "lifetime"],
+      // `lifetime` never expires, so its expiry is null; `pro` carries its own.
+      revenueCatEntitlementsExpiresAtMs: {
+        pro: moment
+          .utc(validPayload.customer_info.entitlements.pro.expires_date)
+          .valueOf(),
+        lifetime: null,
+      },
       revenueCatEventTimestampMs: EVENT_TIMESTAMP_MS,
     });
 
@@ -862,6 +869,7 @@ describe("events", () => {
 
     expect((await auth.getUser("claims_owner_b")).customClaims).toEqual({
       revenueCatEntitlements: [],
+      revenueCatEntitlementsExpiresAtMs: {},
       revenueCatEventTimestampMs: 2000,
     });
 
@@ -879,11 +887,73 @@ describe("events", () => {
 
     expect((await auth.getUser("claims_owner_b")).customClaims).toEqual({
       revenueCatEntitlements: [],
+      revenueCatEntitlementsExpiresAtMs: {},
       revenueCatEventTimestampMs: 2000,
     });
     expect((await auth.getUser("claims_owner_c")).customClaims).toEqual({
       revenueCatEntitlements: ["pro"],
+      revenueCatEntitlementsExpiresAtMs: {
+        pro: moment.utc(activeEntitlements.pro.expires_date).valueOf(),
+      },
       revenueCatEventTimestampMs: 2000,
+    });
+
+    process.env = originalProcessEnv;
+  });
+
+  it("publishes a null per-entitlement expiry for an entitlement that never expires", async () => {
+    jest.resetModules();
+    const originalProcessEnv = process.env;
+    process.env = {
+      ...originalProcessEnv,
+      SET_CUSTOM_CLAIMS: "ENABLED",
+    };
+
+    const { handler } = require("../index");
+    const auth = admin.auth();
+
+    await auth.importUsers(
+      [
+        {
+          uid: "claims_lifetime_owner",
+          email: "claims_lifetime_owner@example.com",
+          passwordHash: Buffer.from("passwordHash"),
+          passwordSalt: Buffer.from("salt"),
+        },
+      ],
+      {
+        hash: {
+          algorithm: "HMAC_SHA256",
+          key: Buffer.from("secretKey"),
+        },
+      }
+    );
+
+    await sleep(100);
+
+    await deliver(
+      {
+        ...validPayload,
+        event: {
+          ...validPayload.event,
+          id: "lifetime_only_event",
+          app_user_id: "claims_lifetime_owner",
+          aliases: ["claims_lifetime_owner"],
+        },
+        customer_info: {
+          ...validPayload.customer_info,
+          entitlements: {
+            lifetime: { expires_date: null },
+          },
+        },
+      },
+      handler
+    );
+
+    expect((await auth.getUser("claims_lifetime_owner")).customClaims).toEqual({
+      revenueCatEntitlements: ["lifetime"],
+      revenueCatEntitlementsExpiresAtMs: { lifetime: null },
+      revenueCatEventTimestampMs: EVENT_TIMESTAMP_MS,
     });
 
     process.env = originalProcessEnv;
@@ -937,6 +1007,7 @@ describe("events", () => {
 
     expect((await auth.getUser("nocoll_owner_b")).customClaims).toEqual({
       revenueCatEntitlements: [],
+      revenueCatEntitlementsExpiresAtMs: {},
       revenueCatEventTimestampMs: 2000,
     });
 
@@ -954,10 +1025,14 @@ describe("events", () => {
 
     expect((await auth.getUser("nocoll_owner_b")).customClaims).toEqual({
       revenueCatEntitlements: [],
+      revenueCatEntitlementsExpiresAtMs: {},
       revenueCatEventTimestampMs: 2000,
     });
     expect((await auth.getUser("nocoll_owner_c")).customClaims).toEqual({
       revenueCatEntitlements: ["pro"],
+      revenueCatEntitlementsExpiresAtMs: {
+        pro: moment.utc(activeEntitlements.pro.expires_date).valueOf(),
+      },
       revenueCatEventTimestampMs: 2000,
     });
 
@@ -1015,6 +1090,9 @@ describe("events", () => {
 
     expect((await auth.getUser("transfer_origin_only")).customClaims).toEqual({
       revenueCatEntitlements: ["pro"],
+      revenueCatEntitlementsExpiresAtMs: {
+        pro: moment.utc(activeEntitlements.pro.expires_date).valueOf(),
+      },
       revenueCatEventTimestampMs: 3000,
     });
 
@@ -1043,6 +1121,7 @@ describe("events", () => {
 
     expect((await auth.getUser("transfer_origin_only")).customClaims).toEqual({
       revenueCatEntitlements: [],
+      revenueCatEntitlementsExpiresAtMs: {},
       revenueCatEventTimestampMs: 4000,
     });
 

@@ -1,5 +1,7 @@
 ## Version 0.1.19
 
+- Added a `revenueCatEntitlementsExpiresAtMs` custom claim mapping each entitlement in `revenueCatEntitlements` to its expiry in epoch milliseconds, or `null` when that entitlement never expires. Custom claims are only rewritten when RevenueCat sends an event, so clients can use each entitlement's expiry to tell whether the cached list is still current.
+- Fixed the entitlement check in the post install instructions, which read a `activeEntitlements` claim this extension has never set.
 - Duplicate deliveries of an event id are now ignored instead of being applied again. The extension marks an event as applied with an `rc_applied_at` field once it finishes processing it, so a delivery that failed part way through is still retried. This requires an events collection to be configured, and adds a second write per event to that collection.
 - Events older than the last event applied to a customer no longer overwrite that customer's document. The last applied `event_timestamp_ms` is tracked per customer in an `rc_last_event_timestamp_ms` field, so this requires a customers collection to be configured.
 - Custom claims are protected from the same reordering independently of any collection: the last applied `event_timestamp_ms` is stored in a `revenueCatEventTimestampMs` custom claim, and an older event never re-grants a claim.
