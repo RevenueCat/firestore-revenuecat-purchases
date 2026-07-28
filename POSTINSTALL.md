@@ -77,10 +77,10 @@ getDoc(doc(db, "${param:REVENUECAT_CUSTOMERS_COLLECTION}", getAuth().currentUser
 
 RevenueCat delivers webhooks at least once and does not guarantee ordering, so the extension keeps two bookkeeping fields to avoid applying the same event twice or letting an older event overwrite a newer one:
 
-- `rc_applied_at` on each event document, set once the event has been fully processed
+- `rc_applied_at` on each event document, set once the event has been fully processed. Each event therefore results in two writes to the events collection.
 - `rc_last_event_timestamp_ms` on each customer document, holding the `event_timestamp_ms` of the last event applied to that customer
 
-Both are written by the extension and should be treated as read-only.
+Both are written by the extension and should be treated as read-only. Each field lives in one of the two collections, so leaving a collection unconfigured also turns off the protection that depends on it: without an events collection duplicates are applied again, and without a customers collection an out of order event still overwrites custom claims.
 
 #### React to subscription lifecycle events
 

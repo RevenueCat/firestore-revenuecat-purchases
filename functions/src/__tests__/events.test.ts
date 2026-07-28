@@ -7,11 +7,6 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-const deleteCollection = async (path: string) => {
-  const snapshot = await admin.firestore().collection(path).get();
-  await Promise.all(snapshot.docs.map((doc) => doc.ref.delete()));
-};
-
 describe("events", () => {
   // @ts-ignore
   beforeAll(() => global.firebaseTest.cleanup());
@@ -27,15 +22,18 @@ describe("events", () => {
       .collection("revenuecat_customers")
       .doc("chairman_carranza")
       .delete();
-    // The handler skips event ids it has already applied, so tests cannot share
-    // the ids they deliver.
-    await deleteCollection("revenuecat_events");
   });
+
+  // The handler applies an event id only once, so every delivery in the suite
+  // needs its own id, including across test files: authentication.test.ts
+  // delivers "uuid" and jest runs test files in parallel workers.
+  const EVENT_TIMESTAMP_MS = 1700000000000;
 
   const validPayload = {
     api_version: "0.0.2",
     event: {
-      id: "uuid",
+      id: "events_base",
+      event_timestamp_ms: EVENT_TIMESTAMP_MS,
       app_user_id: "chairman_carranza",
       bar: "baz",
       aliases: ["miguelcarranza", "chairman_carranza"],
@@ -95,13 +93,78 @@ describe("events", () => {
     },
   };
 
+  const payloadWithEventId = (id: string) => ({
+    ...validPayload,
+    event: { ...validPayload.event, id },
+  });
+
+  const activeEntitlements = {
+    pro: {
+      expires_date: moment.utc().add("days", 2).format(),
+    },
+  };
+
+  const transferPayload = ({
+    id,
+    eventTimestampMs,
+    destinationUserId,
+    destinationEntitlements,
+    originUserId,
+    originEntitlements,
+  }: {
+    id: string;
+    eventTimestampMs: number;
+    destinationUserId: string;
+    destinationEntitlements: Record<string, { expires_date: string | null }>;
+    originUserId: string;
+    originEntitlements: Record<string, { expires_date: string | null }>;
+  }) => ({
+    api_version: validPayload.api_version,
+    event: {
+      id,
+      event_timestamp_ms: eventTimestampMs,
+      type: "TRANSFER",
+      app_user_id: destinationUserId,
+      aliases: [destinationUserId],
+      origin_app_user_id: originUserId,
+      transferred_from: [originUserId],
+      transferred_to: [destinationUserId],
+    },
+    customer_info: {
+      original_app_user_id: destinationUserId,
+      entitlements: destinationEntitlements,
+    },
+    origin_customer_info: {
+      original_app_user_id: originUserId,
+      entitlements: originEntitlements,
+    },
+  });
+
+  const deliver = async (payload: Object, handlerFn = api.handler) => {
+    const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(
+      200,
+      {}
+    ) as any;
+    const mockedRequest = getMockedRequest(
+      createJWT(60, payload as any, "test_secret")
+    ) as any;
+
+    await handlerFn(mockedRequest, mockedResponse);
+  };
+
+  const customerDoc = (userId: string) =>
+    admin.firestore().collection("revenuecat_customers").doc(userId).get();
+
+  const eventDoc = (eventId: string) =>
+    admin.firestore().collection("revenuecat_events").doc(eventId).get();
+
   it("API returns extension version in headers", async () => {
     const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(
       200,
       {}
     ) as any;
     const mockedRequest = getMockedRequest(
-      createJWT(60, validPayload, "test_secret")
+      createJWT(60, payloadWithEventId("events_header"), "test_secret")
     ) as any;
     await api.handler(mockedRequest, mockedResponse);
 
@@ -111,26 +174,13 @@ describe("events", () => {
   });
 
   it("saves the event in the configured events collection", async () => {
-    const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(
-      200,
-      {}
-    ) as any;
+    const payload = payloadWithEventId("events_saved");
 
-    const mockedRequest = getMockedRequest(
-      createJWT(60, validPayload, "test_secret")
-    ) as any;
+    await deliver(payload);
 
-    api.handler(mockedRequest, mockedResponse);
-
-    await sleep(300);
-
-    const doc = await admin
-      .firestore()
-      .collection("revenuecat_events")
-      .doc("uuid")
-      .get();
+    const doc = await eventDoc("events_saved");
     expect(doc.data()).toEqual({
-      ...validPayload.event,
+      ...payload.event,
       rc_applied_at: expect.anything(),
     });
   });
@@ -150,14 +200,7 @@ describe("events", () => {
       {}
     ) as any;
     const mockedRequest = getMockedRequest(
-      createJWT(
-        60,
-        {
-          ...validPayload,
-          event: { ...validPayload.event, id: "not_save_this" },
-        },
-        "test_secret"
-      )
+      createJWT(60, payloadWithEventId("not_save_this"), "test_secret")
     ) as any;
 
     handler(mockedRequest, mockedResponse);
@@ -180,7 +223,7 @@ describe("events", () => {
       {}
     ) as any;
     const mockedRequest = getMockedRequest(
-      createJWT(60, validPayload, "test_secret")
+      createJWT(60, payloadWithEventId("events_customer_info"), "test_secret")
     ) as any;
 
     api.handler(mockedRequest, mockedResponse);
@@ -195,6 +238,7 @@ describe("events", () => {
     expect(doc.data()).toEqual({
       ...validPayload.customer_info,
       aliases: ["miguelcarranza", "chairman_carranza"],
+      rc_last_event_timestamp_ms: EVENT_TIMESTAMP_MS,
     });
 
     const additionalCustomerInfo = {
@@ -206,8 +250,7 @@ describe("events", () => {
       createJWT(
         60,
         {
-          ...validPayload,
-          event: { ...validPayload.event, id: "uuid_customer_info_update" },
+          ...payloadWithEventId("events_customer_info_update"),
           customer_info: {
             ...validPayload.customer_info,
             ...additionalCustomerInfo,
@@ -230,12 +273,13 @@ describe("events", () => {
       ...validPayload.customer_info,
       ...additionalCustomerInfo,
       aliases: ["miguelcarranza", "chairman_carranza"],
+      rc_last_event_timestamp_ms: EVENT_TIMESTAMP_MS,
     });
   });
 
   it("removes entitlements/subscriptions from the customer collection", async () => {
     const initialPayload = {
-      ...validPayload,
+      ...payloadWithEventId("events_promotional_added"),
       customer_info: {
         ...validPayload.customer_info,
         subscriptions: {
@@ -282,16 +326,14 @@ describe("events", () => {
     expect(doc.data()).toEqual({
       ...initialPayload.customer_info,
       aliases: ["miguelcarranza", "chairman_carranza"],
+      rc_last_event_timestamp_ms: EVENT_TIMESTAMP_MS,
     });
 
     const otherMockedRequest = getMockedRequest(
       createJWT(
         60,
         // When promotionals are removed, neither customer_info nor subscriptions will contain them anymore
-        {
-          ...validPayload,
-          event: { ...validPayload.event, id: "uuid_promotional_removed" },
-        },
+        payloadWithEventId("events_promotional_removed"),
         "test_secret"
       )
     ) as any;
@@ -309,6 +351,7 @@ describe("events", () => {
     expect(updatedDoc.data()).toEqual({
       ...validPayload.customer_info,
       aliases: ["miguelcarranza", "chairman_carranza"],
+      rc_last_event_timestamp_ms: EVENT_TIMESTAMP_MS,
     });
   });
 
@@ -327,7 +370,7 @@ describe("events", () => {
       });
 
     const mockedSetRequest = getMockedRequest(
-      createJWT(60, validPayload, "test_secret")
+      createJWT(60, payloadWithEventId("events_transfer_setup"), "test_secret")
     ) as any;
 
     api.handler(mockedSetRequest, mockedResponse);
@@ -391,6 +434,7 @@ describe("events", () => {
       email: "znk@revenuecat.com",
       aliases: ["jesus.sanchez", "znk"],
       ...originCustomerInfo,
+      rc_last_event_timestamp_ms: EVENT_TIMESTAMP_MS,
     });
 
     const newUserDoc = await admin
@@ -402,6 +446,7 @@ describe("events", () => {
     expect(newUserDoc.data()).toEqual({
       ...validPayload.customer_info,
       aliases: validPayload.event.aliases,
+      rc_last_event_timestamp_ms: EVENT_TIMESTAMP_MS,
     });
   });
 
@@ -420,7 +465,7 @@ describe("events", () => {
     ) as any;
 
     const mockedRequest = getMockedRequest(
-      createJWT(60, validPayload, "test_secret")
+      createJWT(60, payloadWithEventId("events_other_keys"), "test_secret")
     ) as any;
 
     api.handler(mockedRequest, mockedResponse);
@@ -437,6 +482,7 @@ describe("events", () => {
       ...validPayload.customer_info,
       email: "chairman@revenuecat.com",
       aliases: validPayload.event.aliases,
+      rc_last_event_timestamp_ms: EVENT_TIMESTAMP_MS,
     });
   });
 
@@ -455,7 +501,7 @@ describe("events", () => {
       {}
     ) as any;
     const mockedRequest = getMockedRequest(
-      createJWT(60, validPayload, "test_secret")
+      createJWT(60, payloadWithEventId("events_placeholder"), "test_secret")
     ) as any;
 
     handler(mockedRequest, mockedResponse);
@@ -473,6 +519,7 @@ describe("events", () => {
     expect(doc.data()).toEqual({
       ...validPayload.customer_info,
       aliases: ["miguelcarranza", "chairman_carranza"],
+      rc_last_event_timestamp_ms: EVENT_TIMESTAMP_MS,
     });
 
     process.env = originalProcessEnv;
@@ -499,6 +546,7 @@ describe("events", () => {
           ...validPayload,
           event: {
             ...validPayload.event,
+            id: "events_no_customers_collection",
             app_user_id: "not_save_this",
           },
         },
@@ -538,7 +586,7 @@ describe("events", () => {
       createJWT(
         60,
         {
-          ...validPayload,
+          ...payloadWithEventId("events_customers_collection_no_userid"),
           app_user_id: null,
           customer_info: {
             ...validPayload.customer_info,
@@ -609,7 +657,7 @@ describe("events", () => {
       createJWT(
         60,
         {
-          ...validPayload,
+          ...payloadWithEventId("events_custom_claims"),
           customer_info: {
             ...validPayload.customer_info,
             original_app_user_id: testUserId,
@@ -636,64 +684,6 @@ describe("events", () => {
     expect(anotherCustomClaims).toEqual(undefined);
     process.env = originalProcessEnv;
   });
-
-  const activeEntitlements = {
-    pro: {
-      expires_date: moment.utc().add("days", 2).format(),
-    },
-  };
-
-  const transferPayload = ({
-    id,
-    eventTimestampMs,
-    destinationUserId,
-    destinationEntitlements,
-    originUserId,
-    originEntitlements,
-  }: {
-    id: string;
-    eventTimestampMs: number;
-    destinationUserId: string;
-    destinationEntitlements: Object;
-    originUserId: string;
-    originEntitlements: Object;
-  }) => ({
-    api_version: validPayload.api_version,
-    event: {
-      id,
-      event_timestamp_ms: eventTimestampMs,
-      type: "TRANSFER",
-      app_user_id: destinationUserId,
-      aliases: [destinationUserId],
-      origin_app_user_id: originUserId,
-      transferred_from: [originUserId],
-      transferred_to: [destinationUserId],
-    },
-    customer_info: {
-      original_app_user_id: destinationUserId,
-      entitlements: destinationEntitlements,
-    },
-    origin_customer_info: {
-      original_app_user_id: originUserId,
-      entitlements: originEntitlements,
-    },
-  });
-
-  const deliver = async (payload: Object, handlerFn = api.handler) => {
-    const mockedResponse = getMockedResponse(expect, () => Promise.resolve())(
-      200,
-      {}
-    ) as any;
-    const mockedRequest = getMockedRequest(
-      createJWT(60, payload as any, "test_secret")
-    ) as any;
-
-    handlerFn(mockedRequest, mockedResponse);
-    await sleep(500);
-  };
-
-  const customerDoc = (userId: string) =>
-    admin.firestore().collection("revenuecat_customers").doc(userId).get();
 
   it("ignores a redelivery of an event that was already applied", async () => {
     await deliver({
@@ -728,12 +718,61 @@ describe("events", () => {
 
     const doc = await customerDoc("chairman_carranza");
     expect(doc.get("original_app_user_id")).toEqual("miguelcarranza");
+
+    const event = await eventDoc("interrupted_event");
+    expect(event.get("app_user_id")).toEqual("chairman_carranza");
+    expect(event.get("rc_applied_at")).toEqual(expect.anything());
+  });
+
+  it("finishes a retry that reuses the timestamp it already wrote", async () => {
+    const event = { ...validPayload.event, id: "retried_event" };
+
+    await deliver({ ...validPayload, event });
+
+    // A delivery that died before marking the event leaves the watermark equal
+    // to its own timestamp; the retry has to get past it.
+    await eventDoc("retried_event").then((doc) => doc.ref.set(event));
+    await customerDoc("chairman_carranza").then((doc) =>
+      doc.ref.update({ entitlements: {} })
+    );
+
+    await deliver({ ...validPayload, event });
+
+    const doc = await customerDoc("chairman_carranza");
+    expect(doc.get("entitlements")).toEqual(
+      validPayload.customer_info.entitlements
+    );
+  });
+
+  it("applies a newer event over an older one", async () => {
+    await deliver({
+      ...validPayload,
+      event: { ...validPayload.event, id: "watermark_first" },
+    });
+
+    await deliver({
+      ...validPayload,
+      event: {
+        ...validPayload.event,
+        id: "watermark_second",
+        event_timestamp_ms: EVENT_TIMESTAMP_MS + 1,
+      },
+      customer_info: { ...validPayload.customer_info, entitlements: {} },
+    });
+
+    const doc = await customerDoc("chairman_carranza");
+    expect(doc.get("entitlements")).toEqual({});
+    expect(doc.get("rc_last_event_timestamp_ms")).toEqual(
+      EVENT_TIMESTAMP_MS + 1
+    );
   });
 
   it("does not write a watermark for events without event_timestamp_ms", async () => {
+    const { event_timestamp_ms, ...eventWithoutTimestamp } = validPayload.event;
+
     await deliver({
       ...validPayload,
-      event: { ...validPayload.event, id: "no_timestamp_event" },
+      event: { ...eventWithoutTimestamp, id: "no_timestamp_event" },
     });
 
     const doc = await customerDoc("chairman_carranza");
@@ -744,16 +783,6 @@ describe("events", () => {
   });
 
   it("ignores a transfer that is older than the last event applied to the customer", async () => {
-    await Promise.all(
-      ["owner_a", "owner_b", "owner_c"].map((userId) =>
-        admin
-          .firestore()
-          .collection("revenuecat_customers")
-          .doc(userId)
-          .delete()
-      )
-    );
-
     // B -> C is applied first and revokes B.
     await deliver(
       transferPayload({
@@ -895,7 +924,7 @@ describe("events", () => {
       createJWT(
         60,
         {
-          ...validPayload,
+          ...payloadWithEventId("events_missing_user"),
           customer_info: {
             ...validPayload.customer_info,
             original_app_user_id: "doesntExist",

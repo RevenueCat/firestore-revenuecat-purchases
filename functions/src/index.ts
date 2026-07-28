@@ -32,7 +32,9 @@ const EXTENSION_VERSION = process.env.EXTENSION_VERSION || "0.1.18";
 
 const EVENT_APPLIED_AT_FIELD = "rc_applied_at";
 const LAST_EVENT_TIMESTAMP_FIELD = "rc_last_event_timestamp_ms";
-const FIRESTORE_ALREADY_EXISTS = 6;
+// firebase-admin does not re-export gRPC status codes, and reaching into
+// google-gax as a transitive dependency for them would be worse.
+const GRPC_STATUS_ALREADY_EXISTS = 6;
 
 type CustomerUpdate = {
   userId: string;
@@ -55,11 +57,10 @@ const getCustomersCollection = ({
 };
 
 /**
- * Claims the event id so a redelivery of an already applied event is a no-op.
  * An event document that exists without EVENT_APPLIED_AT_FIELD comes from a
- * delivery that failed part way through, so it is applied again.
+ * delivery that failed part way through, so it is refreshed and applied again.
  */
-const claimEvent = async ({
+const tryClaimEvent = async ({
   eventRef,
   eventPayload,
 }: {
@@ -70,21 +71,36 @@ const claimEvent = async ({
     await eventRef.create(eventPayload);
     return true;
   } catch (error) {
-    if ((error as { code?: number }).code !== FIRESTORE_ALREADY_EXISTS) {
+    if ((error as { code?: number }).code !== GRPC_STATUS_ALREADY_EXISTS) {
       throw error;
     }
+
     const storedEvent = await eventRef.get();
-    return storedEvent.get(EVENT_APPLIED_AT_FIELD) === undefined;
+    if (storedEvent.get(EVENT_APPLIED_AT_FIELD) !== undefined) {
+      return false;
+    }
+
+    await eventRef.set(eventPayload);
+    return true;
   }
 };
 
+// Anything but a number, including a missing field, means no event has been
+// applied to this customer yet.
+const storedWatermarkMs = (
+  snapshot: admin.firestore.DocumentSnapshot
+): number => {
+  const storedValue = snapshot.get(LAST_EVENT_TIMESTAMP_FIELD);
+  return typeof storedValue === "number"
+    ? storedValue
+    : Number.NEGATIVE_INFINITY;
+};
+
 /**
- * Writes every customer document touched by the event in a single transaction,
- * skipping the ones whose stored watermark is newer than this event. Returns the
- * user ids that were skipped so their custom claims are left alone too.
- *
- * Events carrying the same timestamp as the watermark are applied: retries reuse
- * the original event_timestamp_ms and must still be able to finish the work.
+ * Returns the updates it applied, skipping the customers whose last applied
+ * event is newer. Events carrying the same timestamp as the watermark are
+ * applied: retries reuse the original event_timestamp_ms and must still be
+ * able to finish the work.
  */
 const applyCustomerUpdates = async ({
   firestore,
@@ -96,7 +112,17 @@ const applyCustomerUpdates = async ({
   customersCollectionConfig: string;
   updates: CustomerUpdate[];
   eventTimestampMs: number | undefined;
-}): Promise<Set<string>> => {
+}): Promise<CustomerUpdate[]> => {
+  if (updates.length === 0) {
+    // transaction.getAll() rejects an empty list of references.
+    return updates;
+  }
+
+  const watermark =
+    eventTimestampMs === undefined
+      ? {}
+      : { [LAST_EVENT_TIMESTAMP_FIELD]: eventTimestampMs };
+
   return firestore.runTransaction(async (transaction) => {
     const refs = updates.map((update) =>
       getCustomersCollection({
@@ -106,42 +132,37 @@ const applyCustomerUpdates = async ({
       }).doc(update.userId)
     );
     const snapshots = await transaction.getAll(...refs);
-    const staleUserIds = new Set<string>();
 
-    updates.forEach((update, index) => {
-      const lastEventTimestampMs = snapshots[index].get(
-        LAST_EVENT_TIMESTAMP_FIELD
+    const fresh = updates
+      .map((update, index) => ({
+        update,
+        ref: refs[index],
+        snapshot: snapshots[index],
+      }))
+      .filter(
+        ({ snapshot }) =>
+          eventTimestampMs === undefined ||
+          eventTimestampMs >= storedWatermarkMs(snapshot)
       );
 
-      if (
-        eventTimestampMs !== undefined &&
-        typeof lastEventTimestampMs === "number" &&
-        eventTimestampMs < lastEventTimestampMs
-      ) {
-        staleUserIds.add(update.userId);
-        return;
-      }
-
+    fresh.forEach(({ update, ref, snapshot }) => {
       const payloadToWrite = {
         ...update.customerPayload,
         aliases: update.aliases,
-        ...(eventTimestampMs === undefined
-          ? {}
-          : { [LAST_EVENT_TIMESTAMP_FIELD]: eventTimestampMs }),
+        ...watermark,
       };
 
       // update() replaces maps such as `entitlements` wholesale, which is what
       // revocation needs, while leaving fields owned by the developer alone. A
-      // merging set() would keep revoked entitlements around forever, so it is
-      // only used to create documents that do not exist yet.
-      if (snapshots[index].exists) {
-        transaction.update(refs[index], payloadToWrite);
+      // merging set() would keep revoked entitlements around forever.
+      if (snapshot.exists) {
+        transaction.update(ref, payloadToWrite);
       } else {
-        transaction.set(refs[index], payloadToWrite);
+        transaction.set(ref, payloadToWrite);
       }
     });
 
-    return staleUserIds;
+    return fresh.map(({ update }) => update);
   });
 };
 
@@ -203,16 +224,22 @@ export const handler = functions.https.onRequest(async (request, response) => {
       ? firestore.collection(EVENTS_COLLECTION).doc(eventPayload.id)
       : null;
 
-    if (eventRef && !(await claimEvent({ eventRef, eventPayload }))) {
+    const claimed = eventRef
+      ? await tryClaimEvent({ eventRef, eventPayload })
+      : true;
+
+    if (!claimed) {
       logMessage(`Event ${eventPayload.id} was already applied, skipping`);
       response.send({});
       return;
     }
 
-    const updates: CustomerUpdate[] = [];
+    // Keyed by user id: a transfer whose origin is also its destination must
+    // not write the same document twice in one transaction.
+    const updatesByUserId = new Map<string, CustomerUpdate>();
 
     if (destinationUserId) {
-      updates.push({
+      updatesByUserId.set(destinationUserId, {
         userId: destinationUserId,
         customerPayload,
         aliases: eventPayload.aliases,
@@ -220,39 +247,38 @@ export const handler = functions.https.onRequest(async (request, response) => {
     }
 
     if (is(bodyPayload, "TRANSFER") && bodyPayload.event.origin_app_user_id) {
-      updates.push({
+      updatesByUserId.set(bodyPayload.event.origin_app_user_id, {
         userId: bodyPayload.event.origin_app_user_id,
         customerPayload: bodyPayload.origin_customer_info,
         aliases: bodyPayload.event.transferred_from,
       });
     }
 
+    const updates = [...updatesByUserId.values()];
+
     // Without a customers collection there is nowhere to keep a watermark, so
     // every update is treated as fresh and only the event id guards replays.
-    const staleUserIds =
-      CUSTOMERS_COLLECTION && updates.length > 0
-        ? await applyCustomerUpdates({
-            firestore,
-            customersCollectionConfig: CUSTOMERS_COLLECTION,
-            updates,
-            eventTimestampMs,
-          })
-        : new Set<string>();
+    const appliedUpdates = CUSTOMERS_COLLECTION
+      ? await applyCustomerUpdates({
+          firestore,
+          customersCollectionConfig: CUSTOMERS_COLLECTION,
+          updates,
+          eventTimestampMs,
+        })
+      : updates;
 
     if (SET_CUSTOM_CLAIMS === "ENABLED") {
-      for (const update of updates) {
-        if (staleUserIds.has(update.userId)) {
-          continue;
-        }
-
-        await setCustomClaims({
-          auth,
-          userId: update.userId,
-          entitlements: getActiveEntitlements({
-            customerPayload: update.customerPayload,
-          }),
-        });
-      }
+      await Promise.all(
+        appliedUpdates.map((update) =>
+          setCustomClaims({
+            auth,
+            userId: update.userId,
+            entitlements: getActiveEntitlements({
+              customerPayload: update.customerPayload,
+            }),
+          })
+        )
+      );
     }
 
     await eventChannel?.publish({
