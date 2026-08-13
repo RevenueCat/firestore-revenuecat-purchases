@@ -675,6 +675,7 @@ describe("events", () => {
 
     expect(customClaims).toEqual({
       revenueCatEntitlements: ["pro", "lifetime"],
+      revenueCatEventTimestampMs: EVENT_TIMESTAMP_MS,
     });
 
     const { customClaims: anotherCustomClaims } = await auth.getUser(
@@ -685,6 +686,7 @@ describe("events", () => {
     process.env = originalProcessEnv;
   });
 
+  describe("idempotency and ordering", () => {
   it("ignores a redelivery of an event that was already applied", async () => {
     await deliver({
       ...validPayload,
@@ -860,6 +862,7 @@ describe("events", () => {
 
     expect((await auth.getUser("claims_owner_b")).customClaims).toEqual({
       revenueCatEntitlements: [],
+      revenueCatEventTimestampMs: 2000,
     });
 
     await deliver(
@@ -876,12 +879,175 @@ describe("events", () => {
 
     expect((await auth.getUser("claims_owner_b")).customClaims).toEqual({
       revenueCatEntitlements: [],
+      revenueCatEventTimestampMs: 2000,
     });
     expect((await auth.getUser("claims_owner_c")).customClaims).toEqual({
       revenueCatEntitlements: ["pro"],
+      revenueCatEventTimestampMs: 2000,
     });
 
     process.env = originalProcessEnv;
+  });
+
+  it("does not re-grant custom claims on a stale transfer without a customers collection", async () => {
+    jest.resetModules();
+    const originalProcessEnv = process.env;
+    process.env = {
+      ...originalProcessEnv,
+      SET_CUSTOM_CLAIMS: "ENABLED",
+      // Without a customers collection there is no document watermark, so the
+      // claims watermark is the only thing standing between a stale transfer
+      // and a re-granted claim.
+      REVENUECAT_CUSTOMERS_COLLECTION: "",
+    };
+
+    const { handler } = require("../index");
+    const auth = admin.auth();
+
+    await auth.importUsers(
+      ["nocoll_owner_a", "nocoll_owner_b", "nocoll_owner_c"].map(
+        (uid, index) => ({
+          uid,
+          email: `${uid}@example.com`,
+          passwordHash: Buffer.from(`passwordHash${index}`),
+          passwordSalt: Buffer.from(`salt${index}`),
+        })
+      ),
+      {
+        hash: {
+          algorithm: "HMAC_SHA256",
+          key: Buffer.from("secretKey"),
+        },
+      }
+    );
+
+    await sleep(100);
+
+    await deliver(
+      transferPayload({
+        id: "nocoll_transfer_b_to_c",
+        eventTimestampMs: 2000,
+        destinationUserId: "nocoll_owner_c",
+        destinationEntitlements: activeEntitlements,
+        originUserId: "nocoll_owner_b",
+        originEntitlements: {},
+      }),
+      handler
+    );
+
+    expect((await auth.getUser("nocoll_owner_b")).customClaims).toEqual({
+      revenueCatEntitlements: [],
+      revenueCatEventTimestampMs: 2000,
+    });
+
+    await deliver(
+      transferPayload({
+        id: "nocoll_transfer_a_to_b",
+        eventTimestampMs: 1000,
+        destinationUserId: "nocoll_owner_b",
+        destinationEntitlements: activeEntitlements,
+        originUserId: "nocoll_owner_a",
+        originEntitlements: {},
+      }),
+      handler
+    );
+
+    expect((await auth.getUser("nocoll_owner_b")).customClaims).toEqual({
+      revenueCatEntitlements: [],
+      revenueCatEventTimestampMs: 2000,
+    });
+    expect((await auth.getUser("nocoll_owner_c")).customClaims).toEqual({
+      revenueCatEntitlements: ["pro"],
+      revenueCatEventTimestampMs: 2000,
+    });
+
+    process.env = originalProcessEnv;
+  });
+
+  it("revokes the previous owner's claims on a transfer without a destination user", async () => {
+    jest.resetModules();
+    const originalProcessEnv = process.env;
+    process.env = {
+      ...originalProcessEnv,
+      SET_CUSTOM_CLAIMS: "ENABLED",
+    };
+
+    const { handler } = require("../index");
+    const auth = admin.auth();
+
+    await auth.importUsers(
+      [
+        {
+          uid: "transfer_origin_only",
+          email: "transfer_origin_only@example.com",
+          passwordHash: Buffer.from("passwordHash"),
+          passwordSalt: Buffer.from("salt"),
+        },
+      ],
+      {
+        hash: {
+          algorithm: "HMAC_SHA256",
+          key: Buffer.from("secretKey"),
+        },
+      }
+    );
+
+    await sleep(100);
+
+    // Grant the entitlement first so the transfer below is a genuine revocation.
+    await deliver(
+      {
+        ...validPayload,
+        event: {
+          ...validPayload.event,
+          id: "origin_only_grant",
+          event_timestamp_ms: 3000,
+          app_user_id: "transfer_origin_only",
+          aliases: ["transfer_origin_only"],
+        },
+        customer_info: {
+          ...validPayload.customer_info,
+          entitlements: activeEntitlements,
+        },
+      },
+      handler
+    );
+
+    expect((await auth.getUser("transfer_origin_only")).customClaims).toEqual({
+      revenueCatEntitlements: ["pro"],
+      revenueCatEventTimestampMs: 3000,
+    });
+
+    // A transfer away from the origin that names no destination user must still
+    // revoke the origin's claims.
+    await deliver(
+      {
+        api_version: validPayload.api_version,
+        event: {
+          id: "transfer_without_destination",
+          event_timestamp_ms: 4000,
+          type: "TRANSFER",
+          aliases: [],
+          origin_app_user_id: "transfer_origin_only",
+          transferred_from: ["transfer_origin_only"],
+          transferred_to: [],
+        },
+        customer_info: { original_app_user_id: "", entitlements: {} },
+        origin_customer_info: {
+          original_app_user_id: "transfer_origin_only",
+          entitlements: {},
+        },
+      },
+      handler
+    );
+
+    expect((await auth.getUser("transfer_origin_only")).customClaims).toEqual({
+      revenueCatEntitlements: [],
+      revenueCatEventTimestampMs: 4000,
+    });
+
+    process.env = originalProcessEnv;
+  });
   });
 
   it("fails gracefully seting custom claims for user if SET_CUSTOM_CLAIMS is set but user doesn't exist", async () => {

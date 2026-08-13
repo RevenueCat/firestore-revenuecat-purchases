@@ -32,15 +32,26 @@ const EXTENSION_VERSION = process.env.EXTENSION_VERSION || "0.1.18";
 
 const EVENT_APPLIED_AT_FIELD = "rc_applied_at";
 const LAST_EVENT_TIMESTAMP_FIELD = "rc_last_event_timestamp_ms";
-// firebase-admin does not re-export gRPC status codes, and reaching into
-// google-gax as a transitive dependency for them would be worse.
-const GRPC_STATUS_ALREADY_EXISTS = 6;
+const CLAIMS_EVENT_TIMESTAMP_FIELD = "revenueCatEventTimestampMs";
 
 type CustomerUpdate = {
   userId: string;
   customerPayload: CustomerInfo;
   aliases: string[];
 };
+
+// An event is stale only when it carries a timestamp that is strictly older than
+// the one already applied. A missing timestamp or a stored value that is not a
+// number (nothing applied yet) both mean the event is treated as fresh. Equal
+// timestamps also apply, since a retry reuses the original event_timestamp_ms
+// and must still be able to finish.
+const isStale = (
+  eventTimestampMs: number | undefined,
+  appliedMs: unknown
+): boolean =>
+  eventTimestampMs !== undefined &&
+  typeof appliedMs === "number" &&
+  eventTimestampMs < appliedMs;
 
 const getCustomersCollection = ({
   firestore,
@@ -57,50 +68,34 @@ const getCustomersCollection = ({
 };
 
 /**
- * An event document that exists without EVENT_APPLIED_AT_FIELD comes from a
- * delivery that failed part way through, so it is refreshed and applied again.
+ * Decides whether an event should be applied, claiming its id in a transaction
+ * so a duplicate delivery is only applied once. An event document that exists
+ * without EVENT_APPLIED_AT_FIELD comes from a delivery that failed part way
+ * through, so it is refreshed and applied again.
+ *
+ * This is not mutual exclusion: two simultaneous deliveries of the same id both
+ * read no rc_applied_at and both proceed. That is benign here, since the payload
+ * is identical and the per-customer watermark resolves the ordering.
  */
-const tryClaimEvent = async ({
+const shouldApplyEvent = ({
   eventRef,
   eventPayload,
 }: {
   eventRef: admin.firestore.DocumentReference;
   eventPayload: BodyPayload["event"];
-}): Promise<boolean> => {
-  try {
-    await eventRef.create(eventPayload);
-    return true;
-  } catch (error) {
-    if ((error as { code?: number }).code !== GRPC_STATUS_ALREADY_EXISTS) {
-      throw error;
-    }
-
-    const storedEvent = await eventRef.get();
+}): Promise<boolean> =>
+  eventRef.firestore.runTransaction(async (transaction) => {
+    const storedEvent = await transaction.get(eventRef);
     if (storedEvent.get(EVENT_APPLIED_AT_FIELD) !== undefined) {
       return false;
     }
-
-    await eventRef.set(eventPayload);
+    transaction.set(eventRef, eventPayload);
     return true;
-  }
-};
-
-// Anything but a number, including a missing field, means no event has been
-// applied to this customer yet.
-const storedWatermarkMs = (
-  snapshot: admin.firestore.DocumentSnapshot
-): number => {
-  const storedValue = snapshot.get(LAST_EVENT_TIMESTAMP_FIELD);
-  return typeof storedValue === "number"
-    ? storedValue
-    : Number.NEGATIVE_INFINITY;
-};
+  });
 
 /**
- * Returns the updates it applied, skipping the customers whose last applied
- * event is newer. Events carrying the same timestamp as the watermark are
- * applied: retries reuse the original event_timestamp_ms and must still be
- * able to finish the work.
+ * Writes each customer update in a single transaction and returns the ids of
+ * the customers that were skipped because their last applied event is newer.
  */
 const applyCustomerUpdates = async ({
   firestore,
@@ -112,10 +107,10 @@ const applyCustomerUpdates = async ({
   customersCollectionConfig: string;
   updates: CustomerUpdate[];
   eventTimestampMs: number | undefined;
-}): Promise<CustomerUpdate[]> => {
+}): Promise<Set<string>> => {
   if (updates.length === 0) {
     // transaction.getAll() rejects an empty list of references.
-    return updates;
+    return new Set();
   }
 
   const watermark =
@@ -123,29 +118,27 @@ const applyCustomerUpdates = async ({
       ? {}
       : { [LAST_EVENT_TIMESTAMP_FIELD]: eventTimestampMs };
 
+  // refs do not depend on the transaction attempt, so they can be built once.
+  const refs = updates.map((update) =>
+    getCustomersCollection({
+      firestore,
+      customersCollectionConfig,
+      userId: update.userId,
+    }).doc(update.userId)
+  );
+
   return firestore.runTransaction(async (transaction) => {
-    const refs = updates.map((update) =>
-      getCustomersCollection({
-        firestore,
-        customersCollectionConfig,
-        userId: update.userId,
-      }).doc(update.userId)
-    );
     const snapshots = await transaction.getAll(...refs);
 
-    const fresh = updates
-      .map((update, index) => ({
-        update,
-        ref: refs[index],
-        snapshot: snapshots[index],
-      }))
-      .filter(
-        ({ snapshot }) =>
-          eventTimestampMs === undefined ||
-          eventTimestampMs >= storedWatermarkMs(snapshot)
-      );
+    // Declared inside the callback: runTransaction re-runs it on contention.
+    const skipped = new Set<string>();
+    updates.forEach((update, index) => {
+      const snapshot = snapshots[index];
+      if (isStale(eventTimestampMs, snapshot.get(LAST_EVENT_TIMESTAMP_FIELD))) {
+        skipped.add(update.userId);
+        return;
+      }
 
-    fresh.forEach(({ update, ref, snapshot }) => {
       const payloadToWrite = {
         ...update.customerPayload,
         aliases: update.aliases,
@@ -156,13 +149,13 @@ const applyCustomerUpdates = async ({
       // revocation needs, while leaving fields owned by the developer alone. A
       // merging set() would keep revoked entitlements around forever.
       if (snapshot.exists) {
-        transaction.update(ref, payloadToWrite);
+        transaction.update(refs[index], payloadToWrite);
       } else {
-        transaction.set(ref, payloadToWrite);
+        transaction.set(refs[index], payloadToWrite);
       }
     });
 
-    return fresh.map(({ update }) => update);
+    return skipped;
   });
 };
 
@@ -182,16 +175,30 @@ const setCustomClaims = async ({
   auth,
   userId,
   entitlements,
+  eventTimestampMs,
 }: {
   auth: Auth;
   userId: string;
   entitlements: string[];
+  eventTimestampMs: number | undefined;
 }) => {
   try {
     const { customClaims } = await auth.getUser(userId);
+
+    // Firebase Auth has no compare-and-set, so this per-claim watermark is what
+    // stops a stale event from re-granting claims. It is the only such guard
+    // when no customers collection is configured, and it also protects against
+    // a concurrent delivery that raced past applyCustomerUpdates.
+    if (isStale(eventTimestampMs, customClaims?.[CLAIMS_EVENT_TIMESTAMP_FIELD])) {
+      return;
+    }
+
     await admin.auth().setCustomUserClaims(userId, {
       ...(customClaims ? customClaims : {}),
       revenueCatEntitlements: entitlements,
+      ...(eventTimestampMs === undefined
+        ? {}
+        : { [CLAIMS_EVENT_TIMESTAMP_FIELD]: eventTimestampMs }),
     });
   } catch (userError) {
     logMessage(`Error saving user ${userId}: ${userError}`, "error");
@@ -225,7 +232,7 @@ export const handler = functions.https.onRequest(async (request, response) => {
       : null;
 
     const claimed = eventRef
-      ? await tryClaimEvent({ eventRef, eventPayload })
+      ? await shouldApplyEvent({ eventRef, eventPayload })
       : true;
 
     if (!claimed) {
@@ -256,16 +263,21 @@ export const handler = functions.https.onRequest(async (request, response) => {
 
     const updates = [...updatesByUserId.values()];
 
-    // Without a customers collection there is nowhere to keep a watermark, so
-    // every update is treated as fresh and only the event id guards replays.
-    const appliedUpdates = CUSTOMERS_COLLECTION
+    // Without a customers collection there is nowhere to keep a document
+    // watermark, so every document write is treated as fresh; custom claims are
+    // still guarded on their own watermark inside setCustomClaims.
+    const skippedAsStale = CUSTOMERS_COLLECTION
       ? await applyCustomerUpdates({
           firestore,
           customersCollectionConfig: CUSTOMERS_COLLECTION,
           updates,
           eventTimestampMs,
         })
-      : updates;
+      : new Set<string>();
+
+    const appliedUpdates = updates.filter(
+      (update) => !skippedAsStale.has(update.userId)
+    );
 
     if (SET_CUSTOM_CLAIMS === "ENABLED") {
       await Promise.all(
@@ -276,6 +288,7 @@ export const handler = functions.https.onRequest(async (request, response) => {
             entitlements: getActiveEntitlements({
               customerPayload: update.customerPayload,
             }),
+            eventTimestampMs,
           })
         )
       );
