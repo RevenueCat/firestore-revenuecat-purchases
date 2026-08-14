@@ -12,10 +12,10 @@ type EventType =
   | "EXPIRATION";
 
 interface Entitlement {
-  expires_date: string;
+  expires_date: string | null;
   purchase_date: string;
   product_identifier: string;
-  grace_period_expires_date: string;
+  grace_period_expires_date: string | null;
 }
 
 export interface CustomerInfo {

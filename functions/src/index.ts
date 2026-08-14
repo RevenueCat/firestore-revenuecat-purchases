@@ -159,27 +159,41 @@ const applyCustomerUpdates = async ({
   });
 };
 
+/**
+ * Active entitlements mapped to when they expire, in epoch millis, or null for
+ * an entitlement that never expires. The expiry is published per entitlement so
+ * a client can tell that one lapsed entitlement has not invalidated the others.
+ */
 const getActiveEntitlements = ({
   customerPayload,
 }: {
   customerPayload: CustomerInfo;
-}): string[] => {
-  return Object.keys(customerPayload.entitlements).filter((entitlementID) => {
-    const expiresDate =
-      customerPayload.entitlements[entitlementID].expires_date;
-    return expiresDate === null || moment.utc(expiresDate) >= moment.utc();
-  });
+}): Record<string, number | null> => {
+  const nowMs = moment.utc().valueOf();
+  const active: Record<string, number | null> = {};
+
+  for (const [entitlementID, { expires_date }] of Object.entries(
+    customerPayload.entitlements
+  )) {
+    const expiresAtMs =
+      expires_date === null ? null : moment.utc(expires_date).valueOf();
+    if (expiresAtMs === null || expiresAtMs >= nowMs) {
+      active[entitlementID] = expiresAtMs;
+    }
+  }
+
+  return active;
 };
 
 const setCustomClaims = async ({
   auth,
   userId,
-  entitlements,
+  activeEntitlements,
   eventTimestampMs,
 }: {
   auth: Auth;
   userId: string;
-  entitlements: string[];
+  activeEntitlements: Record<string, number | null>;
   eventTimestampMs: number | undefined;
 }) => {
   try {
@@ -195,7 +209,8 @@ const setCustomClaims = async ({
 
     await admin.auth().setCustomUserClaims(userId, {
       ...(customClaims ? customClaims : {}),
-      revenueCatEntitlements: entitlements,
+      revenueCatEntitlements: Object.keys(activeEntitlements),
+      revenueCatEntitlementsExpiresAtMs: activeEntitlements,
       ...(eventTimestampMs === undefined
         ? {}
         : { [CLAIMS_EVENT_TIMESTAMP_FIELD]: eventTimestampMs }),
@@ -285,7 +300,7 @@ export const handler = functions.https.onRequest(async (request, response) => {
           setCustomClaims({
             auth,
             userId: update.userId,
-            entitlements: getActiveEntitlements({
+            activeEntitlements: getActiveEntitlements({
               customerPayload: update.customerPayload,
             }),
             eventTimestampMs,
