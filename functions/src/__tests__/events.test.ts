@@ -24,9 +24,6 @@ describe("events", () => {
       .delete();
   });
 
-  // The handler applies an event id only once, so every delivery in the suite
-  // needs its own id, including across test files: authentication.test.ts
-  // delivers "uuid" and jest runs test files in parallel workers.
   const EVENT_TIMESTAMP_MS = 1700000000000;
 
   const validPayload = {
@@ -179,10 +176,7 @@ describe("events", () => {
     await deliver(payload);
 
     const doc = await eventDoc("events_saved");
-    expect(doc.data()).toEqual({
-      ...payload.event,
-      rc_applied_at: expect.anything(),
-    });
+    expect(doc.data()).toEqual(payload.event);
   });
 
   it("doesn't save the event if the REVENUECAT_EVENTS_COLLECTION setting is not set", async () => {
@@ -687,53 +681,13 @@ describe("events", () => {
   });
 
   describe("idempotency and ordering", () => {
-  it("ignores a redelivery of an event that was already applied", async () => {
-    await deliver({
-      ...validPayload,
-      event: { ...validPayload.event, id: "redelivered_event" },
-    });
-
-    await deliver({
-      ...validPayload,
-      event: { ...validPayload.event, id: "redelivered_event" },
-      customer_info: {
-        ...validPayload.customer_info,
-        original_app_user_id: "someone_else",
-      },
-    });
-
-    const doc = await customerDoc("chairman_carranza");
-    expect(doc.get("original_app_user_id")).toEqual("miguelcarranza");
-  });
-
-  it("applies an event whose document exists but was never marked as applied", async () => {
-    await admin
-      .firestore()
-      .collection("revenuecat_events")
-      .doc("interrupted_event")
-      .set({ id: "interrupted_event" });
-
-    await deliver({
-      ...validPayload,
-      event: { ...validPayload.event, id: "interrupted_event" },
-    });
-
-    const doc = await customerDoc("chairman_carranza");
-    expect(doc.get("original_app_user_id")).toEqual("miguelcarranza");
-
-    const event = await eventDoc("interrupted_event");
-    expect(event.get("app_user_id")).toEqual("chairman_carranza");
-    expect(event.get("rc_applied_at")).toEqual(expect.anything());
-  });
-
   it("finishes a retry that reuses the timestamp it already wrote", async () => {
     const event = { ...validPayload.event, id: "retried_event" };
 
     await deliver({ ...validPayload, event });
 
-    // A delivery that died before marking the event leaves the watermark equal
-    // to its own timestamp; the retry has to get past it.
-    await eventDoc("retried_event").then((doc) => doc.ref.set(event));
+    // A retry reuses the original event_timestamp_ms, so the watermark the
+    // first delivery wrote must let it through.
     await customerDoc("chairman_carranza").then((doc) =>
       doc.ref.update({ entitlements: {} })
     );

@@ -30,7 +30,6 @@ const SET_CUSTOM_CLAIMS = process.env.SET_CUSTOM_CLAIMS as
   | "DISABLED";
 const EXTENSION_VERSION = process.env.EXTENSION_VERSION || "0.1.18";
 
-const EVENT_APPLIED_AT_FIELD = "rc_applied_at";
 const LAST_EVENT_TIMESTAMP_FIELD = "rc_last_event_timestamp_ms";
 const CLAIMS_EVENT_TIMESTAMP_FIELD = "revenueCatEventTimestampMs";
 
@@ -66,32 +65,6 @@ const getCustomersCollection = ({
     customersCollectionConfig.replace("{app_user_id}", userId)
   );
 };
-
-/**
- * Decides whether an event should be applied, claiming its id in a transaction
- * so a duplicate delivery is only applied once. An event document that exists
- * without EVENT_APPLIED_AT_FIELD comes from a delivery that failed part way
- * through, so it is refreshed and applied again.
- *
- * This is not mutual exclusion: two simultaneous deliveries of the same id both
- * read no rc_applied_at and both proceed. That is benign here, since the payload
- * is identical and the per-customer watermark resolves the ordering.
- */
-const shouldApplyEvent = ({
-  eventRef,
-  eventPayload,
-}: {
-  eventRef: admin.firestore.DocumentReference;
-  eventPayload: BodyPayload["event"];
-}): Promise<boolean> =>
-  eventRef.firestore.runTransaction(async (transaction) => {
-    const storedEvent = await transaction.get(eventRef);
-    if (storedEvent.get(EVENT_APPLIED_AT_FIELD) !== undefined) {
-      return false;
-    }
-    transaction.set(eventRef, eventPayload);
-    return true;
-  });
 
 /**
  * Writes each customer update in a single transaction and returns the ids of
@@ -227,18 +200,11 @@ export const handler = functions.https.onRequest(async (request, response) => {
 
     const eventType = (eventPayload.type || "").toLowerCase();
 
-    const eventRef = EVENTS_COLLECTION
-      ? firestore.collection(EVENTS_COLLECTION).doc(eventPayload.id)
-      : null;
-
-    const claimed = eventRef
-      ? await shouldApplyEvent({ eventRef, eventPayload })
-      : true;
-
-    if (!claimed) {
-      logMessage(`Event ${eventPayload.id} was already applied, skipping`);
-      response.send({});
-      return;
+    if (EVENTS_COLLECTION) {
+      await firestore
+        .collection(EVENTS_COLLECTION)
+        .doc(eventPayload.id)
+        .set(eventPayload);
     }
 
     // Keyed by user id: a transfer whose origin is also its destination must
@@ -298,10 +264,6 @@ export const handler = functions.https.onRequest(async (request, response) => {
       type: `com.revenuecat.v1.${eventType}`,
       data: eventPayload,
     });
-
-    // Marked last so a delivery that fails half way through is retried instead
-    // of being skipped as a duplicate.
-    await eventRef?.update({ [EVENT_APPLIED_AT_FIELD]: Date.now() });
 
     response.send({});
   } catch (err) {

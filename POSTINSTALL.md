@@ -75,13 +75,12 @@ getDoc(doc(db, "${param:REVENUECAT_CUSTOMERS_COLLECTION}", getAuth().currentUser
 
 #### Fields managed by the extension
 
-RevenueCat delivers webhooks at least once and does not guarantee ordering, so the extension keeps some bookkeeping fields to avoid applying the same event twice or letting an older event overwrite a newer one:
+RevenueCat delivers webhooks at least once and does not guarantee ordering, so the extension keeps a watermark to stop an older event from overwriting a newer one:
 
-- `rc_applied_at` on each event document, set once the event has been fully processed. Each event therefore results in two writes to the events collection.
 - `rc_last_event_timestamp_ms` on each customer document, holding the `event_timestamp_ms` of the last event applied to that customer.
 - `revenueCatEventTimestampMs` custom claim, holding the same timestamp for the last event applied to that user's custom claims.
 
-All of these are written by the extension and should be treated as read-only. Leaving a collection unconfigured turns off the protection that depends on it: without an events collection duplicates are applied again, and without a customers collection an out of order event still overwrites the customer document. Custom claims carry their own `revenueCatEventTimestampMs` watermark, so an out of order event never re-grants a claim even when no customers collection is configured.
+All of these are written by the extension and should be treated as read-only. Without a customers collection there is nowhere to keep the watermark, so an out of order event still overwrites the customer document. Custom claims carry their own `revenueCatEventTimestampMs` watermark, so an out of order event never re-grants a claim even when no customers collection is configured.
 
 #### React to subscription lifecycle events
 
