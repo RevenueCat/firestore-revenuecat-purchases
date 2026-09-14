@@ -34,32 +34,33 @@ export const is = <TName extends BodyPayload["event"]["type"]>(
   name: TName
 ): x is GetTypeForName<TName> => x.event.type === name;
 
+type BaseEvent = {
+  id: string;
+  event_timestamp_ms?: number;
+  aliases: string[];
+  // Guarded with a truthiness check at the call site: a transfer can revoke the
+  // previous owner without granting to a new destination, so the destination
+  // user id may be absent.
+  app_user_id?: string;
+};
+
 export type BodyPayload =
   | {
       api_version: string;
-      event: {
+      event: BaseEvent & {
         type: Exclude<EventType, "TRANSFER">;
-        id: string;
-        app_user_id: string;
         subscriber_info: {};
-        aliases: string[];
       };
-      customer_info: {
-        original_app_user_id: string;
-        entitlements: { [entitlementIdentifier: string]: Entitlement };
-      };
+      customer_info: CustomerInfo;
     }
   | {
       api_version: string;
-      event: {
+      event: BaseEvent & {
         type: "TRANSFER";
-        id: string;
         store: string;
         transferred_from: string[];
         transferred_to: string[];
-        aliases: string[];
-        app_user_id: string;
-        origin_app_user_id: string;
+        origin_app_user_id?: string;
       };
       customer_info: CustomerInfo;
       origin_customer_info: CustomerInfo;

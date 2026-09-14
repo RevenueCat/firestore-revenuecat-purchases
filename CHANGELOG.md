@@ -1,3 +1,9 @@
+## Version 0.1.19
+
+- Events older than the last event applied to a customer no longer overwrite that customer's document. The last applied `event_timestamp_ms` is tracked per customer in an `rc_last_event_timestamp_ms` field, so this requires a customers collection to be configured.
+- Custom claims are protected from the same reordering independently of any collection: the last applied `event_timestamp_ms` is stored in a `revenueCatEventTimestampMs` custom claim, and an older event never re-grants a claim.
+- Transfer events now write the origin and destination customer documents in a single transaction.
+
 ## Version 0.1.18
 
 - Upgrade to multiple lirbaries.
