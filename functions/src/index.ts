@@ -28,7 +28,7 @@ const CUSTOMERS_COLLECTION = process.env.REVENUECAT_CUSTOMERS_COLLECTION as
 const SET_CUSTOM_CLAIMS = process.env.SET_CUSTOM_CLAIMS as
   | "ENABLED"
   | "DISABLED";
-const EXTENSION_VERSION = process.env.EXTENSION_VERSION || "0.1.19";
+const EXTENSION_VERSION = process.env.EXTENSION_VERSION || "0.1.20";
 
 const LAST_EVENT_TIMESTAMP_FIELD = "rc_last_event_timestamp_ms";
 const CLAIMS_EVENT_TIMESTAMP_FIELD = "revenueCatEventTimestampMs";
