@@ -28,4 +28,6 @@ jobs:
       # Also builds lib/ through the prepare script.
       - run: npm ci
         working-directory: functions
-      - run: npx -y firebase-tools@15 emulators:exec --only firestore,auth --project=demo-revenuecat 'cd functions && npm test'
+      - run: npm install -g firebase-tools@15.32.1
+      - run: npm run test:emulator
+        working-directory: functions
