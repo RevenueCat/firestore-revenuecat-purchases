@@ -1,7 +1,6 @@
-## Version 0.1.20
+## Version 0.2.0
 
 - Upgraded Node.js from version 20 to version 22, since the Cloud Functions nodejs20 runtime is decommissioned on 2026-10-30.
-- Removed the unused `npm-force-resolutions` preinstall step; dependency pins are applied through npm `overrides`.
 
 ## Version 0.1.19
 
