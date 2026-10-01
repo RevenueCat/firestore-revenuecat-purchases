@@ -1,3 +1,7 @@
+## Version 0.2.0
+
+- Upgraded Node.js from version 20 to version 22, since the Cloud Functions nodejs20 runtime is decommissioned on 2026-10-30.
+
 ## Version 0.1.19
 
 - Events older than the last event applied to a customer no longer overwrite that customer's document. The last applied `event_timestamp_ms` is tracked per customer in an `rc_last_event_timestamp_ms` field, so this requires a customers collection to be configured.

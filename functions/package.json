@@ -2,7 +2,6 @@
   "name": "functions",
   "scripts": {
     "prepare": "npm run build",
-    "preinstall": "npx npm-force-resolutions",
     "lint": "eslint --ext .js,.ts .",
     "test": "jest --watchAll=false --verbose=false",
     "signer": "ts-node development/signer-server.ts",
@@ -15,7 +14,7 @@
     "logs": "firebase functions:log"
   },
   "engines": {
-    "node": "20"
+    "node": "22"
   },
   "main": "lib/index.js",
   "dependencies": {
