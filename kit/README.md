@@ -56,7 +56,7 @@ The CLI asks for these during install and saves them in `function-kits/<kit-id>/
 | `REVENUECAT_EVENTS_COLLECTION` | Firestore collection for RevenueCat events. Empty: events aren't stored. |
 | `REVENUECAT_CUSTOMERS_COLLECTION` | Firestore collection for customer info, e.g. `users`. Can point at your existing users collection: RevenueCat fields are merged into your documents and your own fields are left alone. Supports an `{app_user_id}` placeholder, e.g. `users/{app_user_id}/purchaser-info`. Empty: customer info isn't stored. |
 | `SET_CUSTOM_CLAIMS` | `ENABLED` sets the `revenueCatEntitlements` custom claim on the Firebase Auth user whose UID is the App User ID. `DISABLED` doesn't touch Auth. |
-| `REVENUECAT_SHARED_SECRET` | Secret. The shared secret from the RevenueCat Firebase integration settings. Stored in Cloud Secret Manager. Rotate it in RevenueCat, then run `firebase functions:secrets:set kit-<instance-id>-REVENUECAT_SHARED_SECRET` and deploy again. |
+| `REVENUECAT_SHARED_SECRET` | Secret. The shared secret from the RevenueCat Firebase integration settings. Stored in Cloud Secret Manager. Rotate it in RevenueCat, then run `firebase functions:secrets:set kit-<instance-id>-REVENUECAT_SHARED_SECRET` and deploy again. Migrated from the extension? Also delete the `FIREBASE_SECRET_REF_REVENUECAT_SHARED_SECRET` line from the instance's `.env` file: it still points at the extension's secret. |
 
 The kit also asks for `FUNCTION_DEFAULT_REGION`, the default region of the generated function codebase. The webhook function always deploys to `LOCATION`, so enter the same value.
 
@@ -155,7 +155,7 @@ Your shared secret, collections, custom claims setting and Eventarc events carry
 | Symptom | Cause |
 | :--- | :--- |
 | 400 `InvalidApiVersionError` on one event, then success | Version handshake after an install or update. Expected. |
-| 401 `Incoming RevenueCat webhook could not be authenticated` | The shared secret in the kit doesn't match the one in RevenueCat. Set it again with `firebase functions:secrets:set kit-<instance-id>-REVENUECAT_SHARED_SECRET` and redeploy. |
+| 401 `Incoming RevenueCat webhook could not be authenticated` | The shared secret in the kit doesn't match the one in RevenueCat. Set it again with `firebase functions:secrets:set kit-<instance-id>-REVENUECAT_SHARED_SECRET` (and, if you migrated from the extension, delete the `FIREBASE_SECRET_REF_REVENUECAT_SHARED_SECRET` line from the instance's `.env`), then redeploy. |
 | `Error saving user <id>: There is no user record corresponding to the provided identifier` in the logs | Custom claims are enabled but the App User ID isn't a Firebase Auth UID. The Firestore documents are still written. |
 | Deploy fails creating a service account or setting IAM policy | The deploying account lacks IAM permissions. See [Required IAM](#required-iam). |
 
