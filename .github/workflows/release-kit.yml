@@ -1,0 +1,59 @@
+name: Release kit
+
+on:
+  push:
+    tags: ["kit-v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: npm
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        working-directory: kit
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: kit/package.json
+          registry-url: https://registry.npmjs.org
+          cache: npm
+          cache-dependency-path: kit/package-lock.json
+      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6 # v6.0.1
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Check the tag matches package.json
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION=$(node -p 'require("./package.json").version')
+          if [ "$TAG" != "kit-v$VERSION" ]; then
+            echo "Tag $TAG doesn't match kit/package.json version $VERSION" >&2
+            exit 1
+          fi
+      - run: npm ci
+      - run: npm install -g firebase-tools@15.32.1 npm@11
+      - run: npm run test:emulator
+      # Ship a shrinkwrap without dev dependencies: dev entries break the Cloud Functions buildpack.
+      - name: Pin runtime dependencies
+        run: |
+          npm pkg delete devDependencies
+          npm install --package-lock-only --ignore-scripts
+          npm shrinkwrap
+      - name: Publish
+        run: |
+          VERSION=$(node -p 'require("./package.json").version')
+          case "$VERSION" in
+            *-*) DIST_TAG=next ;;
+            *) DIST_TAG=latest ;;
+          esac
+          npm publish --access public --provenance --ignore-scripts --tag "$DIST_TAG"
