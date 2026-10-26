@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node10",
+    "esModuleInterop": true,
+    "noImplicitReturns": true,
+    "outDir": "lib",
+    "rootDir": "src",
+    "declaration": true,
+    "sourceMap": false,
+    "strict": true,
+    "target": "es2022",
+    "lib": ["es2022"],
+    "types": ["node", "jest"],
+    "skipLibCheck": true
+  },
+  "include": ["src"]
+}
