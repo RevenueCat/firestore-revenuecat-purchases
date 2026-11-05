@@ -42,7 +42,7 @@
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
-    "prepare": "npm run build",
+    "prepack": "npm run build",
     "test": "jest --watchAll=false --verbose=false",
     "test:emulator": "cd ../ && firebase emulators:exec --only firestore,auth --project=demo-revenuecat 'cd kit/ && npm run test'",
     "typecheck": "tsc -p tsconfig.json --noEmit",

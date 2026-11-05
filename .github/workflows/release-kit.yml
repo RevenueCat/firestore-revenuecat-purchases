@@ -41,6 +41,7 @@ jobs:
             exit 1
           fi
       - run: npm ci
+      - run: npm run build
       - run: npm install -g firebase-tools@15.32.1 npm@11
       - run: npm run test:emulator
       # Ship a shrinkwrap without dev dependencies: dev entries break the Cloud Functions buildpack.
