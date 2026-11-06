@@ -44,7 +44,7 @@ Make a sandbox purchase, or grant a promotional entitlement to a customer and tr
 - The event is in your events collection, and the customer's document is in your customers collection.
 - With custom claims enabled, the Firebase Auth user has a `revenueCatEntitlements` claim.
 
-The first event after an install or an update fails with a 400 `InvalidApiVersionError` and is retried right away. That's how RevenueCat learns the kit's version, not a problem with your setup.
+The first event after an install or an update fails with a 400 `InvalidApiVersionError` and is retried a few minutes later. That's how RevenueCat learns the kit's version, not a problem with your setup.
 
 ## Configuration
 
@@ -70,7 +70,7 @@ The kit declares the roles it needs. On deploy, the Firebase CLI creates a servi
 | `roles/firebaseauth.admin` | Sets custom claims on Firebase Auth users. |
 | `roles/eventarc.publisher` | Only when `EVENTARC_CHANNEL` is set: publishes custom events. The CLI also enables `eventarcpublishing.googleapis.com`. |
 
-The account that deploys needs permission to create service accounts and set the project's IAM policy, for example Owner, or Editor plus Project IAM Admin.
+The account that deploys needs permission to create service accounts and set the project's IAM policy, for example Owner, or Editor plus Project IAM Admin. The first deploy asks you to confirm the service account and its roles; when deploying from CI or with `--non-interactive`, pass `--force`.
 
 The function is public: RevenueCat calls it directly. Every request must carry a token signed with your shared secret; anything else gets a 401.
 
@@ -133,7 +133,7 @@ Deploying a function like this one creates the default `firebase` channel in `us
    - When it asks whether to uninstall the extension, answer **No**.
 
 2. Copy the new function's URL (`kit-<instance-id>-handler`) and paste it into **Webhook URL** in the RevenueCat dashboard, under **Project > Integrations > Firebase**.
-3. Check that new events deliver. The first one fails with a 400 `InvalidApiVersionError` and is retried right away.
+3. Check that new events deliver. The first one fails with a 400 `InvalidApiVersionError` and is retried a few minutes later.
 4. Uninstall the extension:
 
    ```bash
@@ -157,6 +157,8 @@ Your shared secret, collections, custom claims setting and Eventarc events carry
 | 400 `InvalidApiVersionError` on one event, then success | Version handshake after an install or update. Expected. |
 | 401 `Incoming RevenueCat webhook could not be authenticated` | The shared secret in the kit doesn't match the one in RevenueCat. Set it again with `firebase functions:secrets:set kit-<instance-id>-REVENUECAT_SHARED_SECRET` (and, if you migrated from the extension, delete the `FIREBASE_SECRET_REF_REVENUECAT_SHARED_SECRET` line from the instance's `.env`), then redeploy. |
 | `Error saving user <id>: There is no user record corresponding to the provided identifier` in the logs | Custom claims are enabled but the App User ID isn't a Firebase Auth UID. The Firestore documents are still written. |
+| Delivery shows no response, then success on a retry | The function was idle and took longer to start than RevenueCat waits for a response. RevenueCat retries, and the event is delivered. |
+| Deploy fails with `Cannot enable declarative security and create managed service account … in non-interactive mode` | The first deploy needs your confirmation for the kit's service account. Deploy interactively once, or pass `--force`. |
 | Deploy fails creating a service account or setting IAM policy | The deploying account lacks IAM permissions. See [Required IAM](#required-iam). |
 
 Logs: `firebase functions:log --only kit-<instance-id>-handler --project <project-id>`.
