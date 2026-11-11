@@ -1,4 +1,4 @@
-import { ExtensionError, InvalidApiVersionError, InvalidTokenError, UnknownError } from "./exceptions";
+import { ExtensionError, UnknownError } from "./exceptions";
 import { logger } from "firebase-functions/logger";
 import type { Response } from "express";
 

@@ -1,7 +1,6 @@
 import nJwt, { JSONMap } from "njwt";
 import { KIT_VERSION } from "../version";
 
-// TODO: add docs
 export const EXPECTED_AUTH_ERROR = JSON.stringify({
     code:1,
     message: "Incoming RevenueCat webhook could not be authenticated. Please check that the shared secret is set up correctly.",
