@@ -49,11 +49,12 @@ jobs:
           npm pkg delete devDependencies
           npm install --package-lock-only --ignore-scripts
           npm shrinkwrap
-      - name: Publish
+      # The trusted publisher is stage-only: a maintainer approves the version on npmjs.com.
+      - name: Stage the release
         run: |
           VERSION=$(node -p 'require("./package.json").version')
           case "$VERSION" in
             *-*) DIST_TAG=next ;;
             *) DIST_TAG=latest ;;
           esac
-          npm publish --access public --provenance --ignore-scripts --tag "$DIST_TAG"
+          npm stage publish --access public --provenance --ignore-scripts --tag "$DIST_TAG"
