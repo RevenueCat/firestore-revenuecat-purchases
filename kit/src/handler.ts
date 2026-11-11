@@ -2,7 +2,6 @@ import { getApps, initializeApp } from "firebase-admin/app";
 import { Auth, getAuth } from "firebase-admin/auth";
 import { Firestore, getFirestore } from "firebase-admin/firestore";
 import { onRequest } from "firebase-functions/v2/https";
-import moment from "moment";
 import {
   customersCollection,
   eventsCollection,
@@ -128,7 +127,7 @@ const getActiveEntitlements = ({
   return Object.keys(customerPayload.entitlements).filter((entitlementID) => {
     const expiresDate =
       customerPayload.entitlements[entitlementID].expires_date;
-    return expiresDate === null || moment.utc(expiresDate) >= moment.utc();
+    return expiresDate === null || new Date(expiresDate) >= new Date();
   });
 };
 
