@@ -1,0 +1,70 @@
+{
+  "name": "@revenuecat/firestore-revenuecat-purchases",
+  "version": "1.0.0",
+  "description": "RevenueCat function kit for Cloud Functions for Firebase: syncs purchases and entitlements to Cloud Firestore and Firebase Auth custom claims. Replaces the RevenueCat Firebase Extension.",
+  "license": "Apache-2.0",
+  "author": "RevenueCat",
+  "homepage": "https://github.com/RevenueCat/firestore-revenuecat-purchases/tree/main/kit#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RevenueCat/firestore-revenuecat-purchases.git",
+    "directory": "kit"
+  },
+  "bugs": {
+    "url": "https://github.com/RevenueCat/firestore-revenuecat-purchases/issues"
+  },
+  "keywords": [
+    "revenuecat",
+    "firebase",
+    "firebase-function-kit",
+    "cloud-functions",
+    "firestore",
+    "in-app-purchases"
+  ],
+  "main": "lib/index.js",
+  "types": "lib/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/**/*.js",
+    "lib/**/*.d.ts",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+    "npm-shrinkwrap.json"
+  ],
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepack": "npm run build",
+    "test": "jest --watchAll=false --verbose=false",
+    "test:emulator": "cd ../ && firebase emulators:exec --only firestore,auth --project=demo-revenuecat 'cd kit/ && npm run test'",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "signer": "ts-node --transpile-only development/signer-server.ts"
+  },
+  "dependencies": {
+    "firebase-admin": "^14.5.0",
+    "firebase-functions": "^7.4.0",
+    "njwt": "^2.0.1"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.15.0",
+    "body-parser": "^1.20.3",
+    "dotenv": "^16.4.7",
+    "express": "^4.22.1",
+    "jest": "^29.7.0",
+    "moment": "^2.31.0",
+    "ts-jest": "^29.2.5",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}
