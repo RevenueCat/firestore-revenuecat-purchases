@@ -68,7 +68,7 @@ The kit declares the roles it needs. On deploy, the Firebase CLI creates a servi
 | :--- | :--- |
 | `roles/datastore.user` | Writes customer and event documents to Cloud Firestore. |
 | `roles/firebaseauth.admin` | Sets custom claims on Firebase Auth users. |
-| `roles/eventarc.publisher` | Only when `EVENTARC_CHANNEL` is set: publishes custom events. The CLI also enables `eventarcpublishing.googleapis.com`. |
+| `roles/eventarc.publisher` | Only when [events](#events) are on: publishes custom events. The CLI also enables `eventarcpublishing.googleapis.com`. |
 
 The account that deploys needs permission to create service accounts and set the project's IAM policy, for example Owner, or Editor plus Project IAM Admin. The first deploy asks you to confirm the service account and its roles; when deploying from CI or with `--non-interactive`, pass `--force`.
 

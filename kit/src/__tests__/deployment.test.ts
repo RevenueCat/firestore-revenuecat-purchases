@@ -41,9 +41,10 @@ describe("deployment manifest", () => {
     expect(mockRequiresAPI).not.toHaveBeenCalled();
   });
 
-  it("declares the Eventarc role and API only when a channel is configured", () => {
+  it("declares the Eventarc role and API when events are on", () => {
     loadKit({
       EVENTARC_CHANNEL: "projects/p/locations/us-central1/channels/firebase",
+      EXT_SELECTED_EVENTS: "com.revenuecat.v1.transfer",
     });
 
     expect(mockRequiresRole).toHaveBeenCalledWith("roles/eventarc.publisher");
@@ -51,6 +52,16 @@ describe("deployment manifest", () => {
       "eventarcpublishing.googleapis.com",
       expect.any(String)
     );
+  });
+
+  it("doesn't declare the Eventarc role and API for a channel without selected events", () => {
+    loadKit({
+      EVENTARC_CHANNEL: "projects/p/locations/us-central1/channels/firebase",
+      EXT_SELECTED_EVENTS: "",
+    });
+
+    expect(mockRequiresRole).not.toHaveBeenCalledWith("roles/eventarc.publisher");
+    expect(mockRequiresAPI).not.toHaveBeenCalled();
   });
 
   it("deploys a 2nd gen function in LOCATION with the shared secret", () => {
