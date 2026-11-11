@@ -52,7 +52,7 @@ The CLI asks for these during install and saves them in `function-kits/<kit-id>/
 
 | Param | Description |
 | :--- | :--- |
-| `LOCATION` | Region of the webhook function, e.g. `us-east1`. Pick one close to your Firestore database. |
+| `LOCATION` | Region of the webhook function, e.g. `us-east1`. Pick one close to your Firestore database. Changing it later gives the function a new URL: after you deploy, update **Webhook URL** in the RevenueCat dashboard. |
 | `REVENUECAT_EVENTS_COLLECTION` | Firestore collection for RevenueCat events. Empty: events aren't stored. |
 | `REVENUECAT_CUSTOMERS_COLLECTION` | Firestore collection for customer info, e.g. `users`. Can point at your existing users collection: RevenueCat fields are merged into your documents and your own fields are left alone. Supports an `{app_user_id}` placeholder, e.g. `users/{app_user_id}/purchaser-info`. Empty: customer info isn't stored. |
 | `SET_CUSTOM_CLAIMS` | `ENABLED` sets the `revenueCatEntitlements` custom claim on the Firebase Auth user whose UID is the App User ID. `DISABLED` doesn't touch Auth. |
