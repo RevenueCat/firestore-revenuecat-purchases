@@ -1,5 +1,4 @@
 import { Channel, getEventarc } from "firebase-admin/eventarc";
-import { logger } from "firebase-functions/logger";
 
 let channel: Channel | null | undefined;
 
@@ -32,15 +31,11 @@ export const eventsEnabled = (): boolean => Boolean(process.env.EVENTARC_CHANNEL
 /**
  * Publishes a RevenueCat event as a `com.revenuecat.v1.<type>` custom event.
  *
- * Never throws: the Firestore writes have already happened, and failing the webhook would
- * make RevenueCat retry an event that was applied.
+ * A failure fails the webhook, as in the extension, so RevenueCat retries the event. The
+ * retry rewrites the same documents, which is safe.
  */
 export const publishEvent = async (eventType: string, data: object): Promise<void> => {
-  try {
-    await getChannel()?.publish({ type: `com.revenuecat.v1.${eventType}`, data });
-  } catch (error) {
-    logger.error(`Error publishing com.revenuecat.v1.${eventType} to Eventarc: ${error}`);
-  }
+  await getChannel()?.publish({ type: `com.revenuecat.v1.${eventType}`, data });
 };
 
 /** Forgets the cached channel so tests can change the env between cases. */

@@ -114,7 +114,7 @@ export const onBillingIssue = onCustomEventPublished(
 );
 ```
 
-Deploying a function like this one creates the default `firebase` channel in `us-central1` if it doesn't exist yet. The event's `data` is the RevenueCat webhook event. A failure to publish is logged and doesn't fail the webhook, because the Firestore writes have already happened.
+Deploying a function like this one creates the default `firebase` channel in `us-central1` if it doesn't exist yet. The event's `data` is the RevenueCat webhook event. If publishing fails, the webhook fails and RevenueCat retries the event.
 
 ## Migrating from the extension
 
@@ -148,7 +148,6 @@ Your shared secret, collections, custom claims setting and Eventarc events carry
 - The webhook URL and function name start with `kit-` instead of `ext-`.
 - Eventarc events have a different `source` attribute: the kit's function, not the extension instance. Filters on `source` need updating; filters on `type` keep working.
 - Installing the kit doesn't create an Eventarc channel. Migrated instances keep the extension's channel; for a fresh install, deploying your first `onCustomEventPublished` handler creates the default one.
-- An Eventarc publish failure no longer fails the webhook.
 
 ## Troubleshooting
 

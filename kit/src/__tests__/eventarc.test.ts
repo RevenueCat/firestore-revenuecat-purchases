@@ -65,11 +65,11 @@ describe("publishEvent", () => {
     });
   });
 
-  it("swallows publish failures", async () => {
+  it("fails when publishing fails, so RevenueCat retries the event", async () => {
     process.env.EVENTARC_CHANNEL = CHANNEL;
     process.env.EXT_SELECTED_EVENTS = "com.revenuecat.v1.transfer";
     mockPublish.mockRejectedValue(new Error("PERMISSION_DENIED"));
 
-    await expect(publishEvent("transfer", { id: "1" })).resolves.toBeUndefined();
+    await expect(publishEvent("transfer", { id: "1" })).rejects.toThrow("PERMISSION_DENIED");
   });
 });
