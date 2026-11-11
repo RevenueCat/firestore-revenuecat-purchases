@@ -25,7 +25,7 @@ firebase functions:kits:install --package @revenuecat/firestore-revenuecat-purch
 ```
 
 - The CLI warns that the package isn't published by Firebase. That's expected for any kit that doesn't come from Google; confirm to continue.
-- Pick an instance ID (for example `revenuecat`). It names the deployed function: `kit-<instance-id>-handler`.
+- Keep the default kit name, then pick an instance ID (for example `revenuecat`). It names the deployed function: `kit-<instance-id>-handler`.
 - Answer the configuration prompts (see [Configuration](#configuration)), including the shared secret.
 
 Then deploy it:
@@ -38,7 +38,7 @@ Copy the function's URL from the deploy output or from `firebase functions:list 
 
 ### Check that it works
 
-Make a sandbox purchase, or grant a promotional entitlement to a customer and transfer it to another customer in the RevenueCat dashboard. Then:
+Make a sandbox purchase, or grant a promotional entitlement to a customer in the RevenueCat dashboard. Then:
 
 - The integration's event list in the RevenueCat dashboard shows the event as delivered.
 - The event is in your events collection, and the customer's document is in your customers collection.
