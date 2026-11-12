@@ -11,9 +11,10 @@ Get started:
 
 - [Install the function kit](kit/README.md#install)
 - [Migrate from the Firebase Extension](kit/README.md#migrating-from-the-extension)
+- [Update the function kit](kit/README.md#update)
 - [Documentation](https://docs.revenuecat.com/docs/firebase-integration)
 
-The kit's source is in [`kit/`](kit/).
+The Firebase CLI installs the kit from npm, so you don't need to clone this repository. Its source is in [`kit/`](kit/).
 
 ## Firebase Extension (deprecated)
 

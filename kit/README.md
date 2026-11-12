@@ -18,15 +18,22 @@ It replaces the RevenueCat Firebase Extension (`revenuecat/firestore-revenuecat-
 
 ## Install
 
-From your Firebase project directory:
+The Firebase CLI downloads the kit from npm, so you don't need to clone this repository. Run these from your Firebase project directory, the one with `firebase.json` (if you don't have one, run `firebase init` or create an empty `firebase.json`):
 
 ```bash
 firebase functions:kits:install --package @revenuecat/firestore-revenuecat-purchases --project <project-id>
 ```
 
 - The CLI warns that the package isn't published by Firebase. That's expected for any kit that doesn't come from Google; confirm to continue.
-- Keep the default kit name, then pick an instance ID (for example `revenuecat`). It names the deployed function: `kit-<instance-id>-handler`.
+- Keep the default kit name, `firestore-revenuecat-purchases`. Then pick an instance ID (for example `revenuecat`). It names the deployed function: `kit-<instance-id>-handler`.
 - Answer the configuration prompts (see [Configuration](#configuration)), including the shared secret.
+
+The command adds the kit to your `firebase.json` and creates a `function-kits/<kit-id>/` folder in your project, where `<kit-id>` is the kit name:
+
+- `source/`: a small generated codebase that depends on the npm package. It's what gets deployed, and where you [update](#update) the kit.
+- `config-<instance-id>/`: the instance's [configuration](#configuration).
+
+Keep this folder with your project: you need it to update or reconfigure the kit.
 
 Then deploy it:
 
@@ -45,6 +52,18 @@ Make a sandbox purchase, or grant a promotional entitlement to a customer in the
 - With custom claims enabled, the Firebase Auth user has a `revenueCatEntitlements` claim.
 
 The first event after an install or an update fails with a 400 `InvalidApiVersionError` and is retried a few minutes later. That's how RevenueCat learns the kit's version, not a problem with your setup.
+
+## Update
+
+Install the new version into the kit's `source/` folder, then deploy again. From your Firebase project directory:
+
+```bash
+npm --prefix function-kits/<kit-id>/source install @revenuecat/firestore-revenuecat-purchases@latest
+npm --prefix function-kits/<kit-id>/source prune
+firebase deploy --only functions:<instance-id> --project <project-id>
+```
+
+`npm prune` removes packages the new version no longer uses. The first event after the update gets the 400 version handshake described above.
 
 ## Configuration
 
@@ -118,7 +137,7 @@ Deploying a function like this one creates the default `firebase` channel in `us
 
 ## Migrating from the extension
 
-`firebase ext:migrate` installs the kit with your extension instance's configuration, deploys it, and then offers to uninstall the extension.
+`firebase ext:migrate` installs the kit with your extension instance's configuration, deploys it, and then offers to uninstall the extension. Like an install, it creates the `function-kits/<kit-id>/` folder in your project, so you [update](#update) a migrated kit the same way. Run it from your Firebase project directory; if you installed the extension from the Firebase console and have no `firebase.json`, run `firebase init` or create an empty one first.
 
 **Your webhook URL changes** from `ext-<instance-id>-handler` to `kit-<instance-id>-handler`. RevenueCat keeps sending to the old URL until you change it in the dashboard, so keep the extension installed until you've done that.
 
