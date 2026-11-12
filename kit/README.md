@@ -129,15 +129,18 @@ Deploying a function like this one creates the default `firebase` channel in `us
    ```
 
    - If the CLI offers to update the extension first, accept.
+   - The CLI warns that the package is a third-party kit. Confirm to continue.
+   - Keep the default kit name and instance name. The instance name defaults to your extension's instance ID, so the function becomes `kit-<instance-id>-handler`.
    - If it asks for `FUNCTION_DEFAULT_REGION`, enter your extension's `LOCATION`.
-   - When it asks whether to uninstall the extension, answer **No**.
+   - Confirm the service account and roles the kit's function uses.
+   - When it asks **Uninstall it now?**, answer **No**. RevenueCat still sends events to the extension until you change the webhook URL.
 
 2. Copy the new function's URL (`kit-<instance-id>-handler`) and paste it into **Webhook URL** in the RevenueCat dashboard, under **Project > Integrations > Firebase**.
 3. Check that new events deliver. The first one fails with a 400 `InvalidApiVersionError` and is retried a few minutes later.
-4. Uninstall the extension:
+4. Uninstall the extension. Without `--immediate`, the command only removes the extension from your local `firebase.json` and leaves it deployed.
 
    ```bash
-   firebase ext:uninstall <extension-instance-id> --project <project-id>
+   firebase ext:uninstall <extension-instance-id> --project <project-id> --immediate
    ```
 
 Your shared secret, collections, custom claims setting and Eventarc events carry over. Your Firestore data and custom claims aren't touched.
