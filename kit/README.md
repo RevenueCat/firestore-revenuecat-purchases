@@ -18,7 +18,7 @@ It replaces the RevenueCat Firebase Extension (`revenuecat/firestore-revenuecat-
 
 ## Install
 
-From your Firebase project directory:
+The Firebase CLI downloads the kit from npm, so you don't need to clone this repository. From your Firebase project directory:
 
 ```bash
 firebase functions:kits:install --package @revenuecat/firestore-revenuecat-purchases --project <project-id>
@@ -45,6 +45,20 @@ Make a sandbox purchase, or grant a promotional entitlement to a customer in the
 - With custom claims enabled, the Firebase Auth user has a `revenueCatEntitlements` claim.
 
 The first event after an install or an update fails with a 400 `InvalidApiVersionError` and is retried a few minutes later. That's how RevenueCat learns the kit's version, not a problem with your setup.
+
+## Update
+
+Update the package in the kit's source folder, then deploy again. From your Firebase project directory:
+
+```bash
+cd function-kits/<kit-id>/source
+npm install @revenuecat/firestore-revenuecat-purchases@latest
+npm prune
+cd ../../..
+firebase deploy --only functions:<instance-id> --project <project-id>
+```
+
+`<kit-id>` is the kit name you kept at install, `firestore-revenuecat-purchases` by default. `npm prune` removes packages the new version no longer uses. The first event after the update gets the 400 version handshake described above.
 
 ## Configuration
 
