@@ -1,3 +1,5 @@
+> **Deprecated:** don't install this extension in new projects. Google shuts down Firebase Extensions on March 31, 2027. Use the RevenueCat function kit, [`@revenuecat/firestore-revenuecat-purchases`](https://www.npmjs.com/package/@revenuecat/firestore-revenuecat-purchases), instead: [install the kit](https://github.com/RevenueCat/firestore-revenuecat-purchases/blob/main/kit/README.md#install), or [migrate from the extension](https://github.com/RevenueCat/firestore-revenuecat-purchases/blob/main/kit/README.md#migrating-from-the-extension).
+
 RevenueCat’s app monetization platform empowers developers to confidently deploy in-app purchases and subscriptions, centralize data, and grow revenue. RevenueCat builds and adapts to the ever-changing needs of in-app purchase infrastructure, freeing app businesses to invest their time and resources in growing their product.
 
 Install this extension to use Firebase services as your RevenueCat backend for in-app purchases on Apple App Store, Google Play Store, and Amazon Appstore.
