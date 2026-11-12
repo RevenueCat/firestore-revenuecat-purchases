@@ -1,5 +1,11 @@
 # firestore-revenuecat-purchases
 
+> [!IMPORTANT]
+> Google shuts down Firebase Extensions on March 31, 2027, and this extension will be deprecated. It's replaced by the RevenueCat function kit, [`@revenuecat/firestore-revenuecat-purchases`](https://www.npmjs.com/package/@revenuecat/firestore-revenuecat-purchases), in [`kit/`](kit/):
+>
+> - New to the integration? [Install the function kit](kit/README.md#install).
+> - Already using the extension? [Migrate from the extension to the function kit](kit/README.md#migrating-from-the-extension).
+
 [Documentation](https://docs.revenuecat.com/docs/firebase-integration)
 
 [Install this extension](https://firebase.google.com/products/extensions/revenuecat-firestore-revenuecat-purchases)
