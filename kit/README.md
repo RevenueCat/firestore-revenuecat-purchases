@@ -149,7 +149,7 @@ Your shared secret, collections, custom claims setting and Eventarc events carry
 
 - The function runs on Cloud Functions 2nd gen, under its own service account.
 - The webhook URL and function name start with `kit-` instead of `ext-`.
-- Eventarc events have a different `source` attribute: the kit's function, not the extension instance. Filters on `source` need updating; filters on `type` keep working.
+- Eventarc events have a different `source` attribute: `projects/<project-id>/locations/<location>/services/kit-<instance-id>-handler` instead of `//firebaseextensions.googleapis.com/extensions/projects/<project-id>/instances/<instance-id>`. Filters on `source` need updating; filters on `type` keep working.
 - Installing the kit doesn't create an Eventarc channel. Migrated instances keep the extension's channel; for a fresh install, deploying your first `onCustomEventPublished` handler creates the default one.
 
 ## Troubleshooting
