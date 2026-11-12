@@ -39,7 +39,7 @@
     "npm-shrinkwrap.json"
   ],
   "engines": {
-    "node": "22"
+    "node": "24"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -57,7 +57,7 @@
   "devDependencies": {
     "@types/express": "^5.0.6",
     "@types/jest": "^29.5.14",
-    "@types/node": "^22.15.0",
+    "@types/node": "^24.19.2",
     "body-parser": "^1.20.3",
     "dotenv": "^16.4.7",
     "express": "^4.22.1",
@@ -66,5 +66,10 @@
     "ts-jest": "^29.2.5",
     "ts-node": "^10.9.2",
     "typescript": "^5.8.3"
+  },
+  "overrides": {
+    "njwt": {
+      "uuid": "^11.1.1"
+    }
   }
 }
