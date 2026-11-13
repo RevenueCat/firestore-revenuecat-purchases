@@ -9,6 +9,8 @@
 
 It replaces the RevenueCat Firebase Extension (`revenuecat/firestore-revenuecat-purchases`), which stops being manageable when Google shuts down Firebase Extensions on March 31, 2027. Already on the extension? See [Migrating from the extension](#migrating-from-the-extension).
 
+The RevenueCat docs cover the same steps: [Install the RevenueCat function kit for Firebase](https://www.revenuecat.com/docs/integrations/third-party-integrations/firebase-function-kit) and [Migrate from the RevenueCat Firebase Extension](https://www.revenuecat.com/docs/integrations/third-party-integrations/firebase-extension-migration).
+
 ## Before you start
 
 - A Firebase project on the Blaze (pay-as-you-go) plan, with Cloud Firestore set up. Set up Firebase Authentication too if you want custom claims.
