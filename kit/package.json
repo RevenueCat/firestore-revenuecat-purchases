@@ -1,7 +1,7 @@
 {
   "name": "@revenuecat/firestore-revenuecat-purchases",
   "version": "1.0.0",
-  "description": "RevenueCat function kit for Cloud Functions for Firebase: syncs purchases and entitlements to Cloud Firestore and Firebase Auth custom claims. Replaces the RevenueCat Firebase Extension.",
+  "description": "Firebase function kit for RevenueCat: syncs purchases and entitlements to Cloud Firestore and Firebase Auth custom claims. Replaces the RevenueCat Firebase Extension.",
   "license": "Apache-2.0",
   "author": "RevenueCat",
   "homepage": "https://github.com/RevenueCat/firestore-revenuecat-purchases/tree/main/kit#readme",

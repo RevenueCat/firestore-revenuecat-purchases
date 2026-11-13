@@ -1,4 +1,4 @@
-> **Deprecated:** don't install this extension in new projects. Google shuts down Firebase Extensions on March 31, 2027. Use the RevenueCat function kit, [`@revenuecat/firestore-revenuecat-purchases`](https://www.npmjs.com/package/@revenuecat/firestore-revenuecat-purchases), instead: [install the kit](https://github.com/RevenueCat/firestore-revenuecat-purchases/blob/main/kit/README.md#install), or [migrate from the extension](https://github.com/RevenueCat/firestore-revenuecat-purchases/blob/main/kit/README.md#migrating-from-the-extension).
+> **Deprecated:** don't install this extension in new projects. Google shuts down Firebase Extensions on March 31, 2027. Use the Firebase function kit, [`@revenuecat/firestore-revenuecat-purchases`](https://www.npmjs.com/package/@revenuecat/firestore-revenuecat-purchases), instead: [install the kit](https://github.com/RevenueCat/firestore-revenuecat-purchases/blob/main/kit/README.md#install), or [migrate from the extension](https://github.com/RevenueCat/firestore-revenuecat-purchases/blob/main/kit/README.md#migrating-from-the-extension).
 
 RevenueCat’s app monetization platform empowers developers to confidently deploy in-app purchases and subscriptions, centralize data, and grow revenue. RevenueCat builds and adapts to the ever-changing needs of in-app purchase infrastructure, freeing app businesses to invest their time and resources in growing their product.
 
@@ -42,7 +42,7 @@ Before installing this extension, set up the following Firebase services in your
 Follow the steps in the [RevenueCat documentation](https://docs.revenuecat.com/docs/getting-started) to add the RevenueCat SDK to your mobile app. In addition, follow the instructions to [set up the Firebase Integration](https://docs.revenuecat.com/docs/firebase-integration) inside the app by:
 
 - Listening to Firebase Authentication events and [setting the RevenueCat app user ID to the Firebase UID](https://docs.revenuecat.com/docs/firebase-integration#2-set-firebase-user-identity-in-revenuecat).
-- Setting the [reserved RevenueCat subscriber attribute](https://docs.revenuecat.com/docs/firebase-integration#set-firebaseappinstanceid-as-a-subscriber-attribute) `$firebaseAppInstanceId` to the Firebase App Instance ID if you want to send events to Google Analytics for Firebase.
+- Setting the [reserved RevenueCat customer attribute](https://docs.revenuecat.com/docs/firebase-integration#set-firebaseappinstanceid-as-a-customer-attribute) `$firebaseAppInstanceId` to the Firebase App Instance ID if you want to send events to Google Analytics for Firebase.
 
 #### Billing
 

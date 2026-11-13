@@ -1,4 +1,4 @@
-# RevenueCat function kit for Firebase
+# Firebase function kit for RevenueCat
 
 `@revenuecat/firestore-revenuecat-purchases` is a [Firebase function kit](https://firebase.google.com/docs/extensions/users/migrate): a 2nd gen Cloud Function you install into your Firebase project. It receives RevenueCat webhooks and keeps your Firebase project in sync with your customers' purchases:
 
@@ -8,6 +8,8 @@
 - Publishes `com.revenuecat.v1.*` custom events to Eventarc, so your own functions can react to them.
 
 It replaces the RevenueCat Firebase Extension (`revenuecat/firestore-revenuecat-purchases`), which stops being manageable when Google shuts down Firebase Extensions on March 31, 2027. Already on the extension? See [Migrating from the extension](#migrating-from-the-extension).
+
+The RevenueCat docs cover the same steps: [Install the Firebase function kit](https://www.revenuecat.com/docs/integrations/third-party-integrations/firebase-function-kit) and [Migrate from the RevenueCat Firebase Extension](https://www.revenuecat.com/docs/integrations/third-party-integrations/firebase-extension-migration).
 
 ## Before you start
 
