@@ -1,5 +1,7 @@
 # firestore-revenuecat-purchases
 
+<!-- FIREBASE_EXTENSION_REPLACEMENT: package="@revenuecat/firestore-revenuecat-purchases" -->
+
 The RevenueCat function kit for Firebase, [`@revenuecat/firestore-revenuecat-purchases`](https://www.npmjs.com/package/@revenuecat/firestore-revenuecat-purchases), uses Firebase services as your RevenueCat backend for in-app purchases on Apple App Store, Google Play Store, and Amazon Appstore to control access to premium content and sync customer purchase information to Firestore. For example, you might want to:
 
 - Store purchase lifecycle events (e.g., trial starts, purchases, subscription renewals, billing issues) in Firestore and react to them.
@@ -12,7 +14,7 @@ Get started:
 - [Install the function kit](kit/README.md#install)
 - [Migrate from the Firebase Extension](kit/README.md#migrating-from-the-extension)
 - [Update the function kit](kit/README.md#update)
-- [Documentation](https://docs.revenuecat.com/docs/firebase-integration)
+- [Documentation](https://www.revenuecat.com/docs/integrations/third-party-integrations/firebase-function-kit)
 
 The Firebase CLI installs the kit from npm, so you don't need to clone this repository. Its source is in [`kit/`](kit/).
 
