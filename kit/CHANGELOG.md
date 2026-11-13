@@ -1,6 +1,6 @@
 ## 1.0.0
 
-First release of the RevenueCat function kit, replacing the RevenueCat Firebase Extension 0.2.0.
+First release of the Firebase function kit, replacing the RevenueCat Firebase Extension 0.2.0.
 
 - Runs as a 2nd gen Cloud Function, installed with `firebase functions:kits:install` or `firebase ext:migrate`.
 - Runs on Node.js 24, the runtime the Firebase CLI deploys kits on.
