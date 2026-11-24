@@ -1,3 +1,7 @@
+## Version 0.2.1
+
+- Updated the `proxy-addr` dependency to 2.0.8, which fixes CVE-2026-90711.
+
 ## Version 0.2.0
 
 - Upgraded Node.js from version 20 to version 22, since the Cloud Functions nodejs20 runtime is decommissioned on 2026-10-30.
